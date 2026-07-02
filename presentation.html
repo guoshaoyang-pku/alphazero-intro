@@ -44,14 +44,18 @@ html,body{
 }
 
 /* ── Slide container ─────────────────────────────────────────────── */
-.deck{width:100vw;height:100vh;position:relative;}
+.deck{
+  width:100vw;height:100vh;
+  position:relative;
+  overflow:hidden;
+}
 
 .slide{
-  position:absolute;inset:0;
+  position:absolute;
   display:flex;flex-direction:column;
   width:1280px;height:720px;
-  margin:auto;
-  top:50%;left:50%;
+  /* position set by JS fit() — top/left centered in deck */
+  left:50%;top:50%;
   transform:translate(-50%,-50%) scale(var(--scale,1));
   transform-origin:center center;
   box-shadow:0 10px 60px rgba(0,0,0,.5);
@@ -59,7 +63,7 @@ html,body{
   opacity:0;pointer-events:none;
   transition:opacity .25s ease;
 }
-.slide.active{opacity:1;pointer-events:auto;}
+.slide.active{opacity:1;pointer-events:auto;z-index:2;}
 
 .slide.dark{background:var(--navy);color:#fff;}
 .slide.section{background:var(--section);color:#fff;}
@@ -278,7 +282,7 @@ html,body{
 @media print{
   @page{ size:1280px 720px; margin:0; }
   html,body{ width:1280px; height:auto; overflow:visible; background:#fff; }
-  .deck{ width:1280px; height:auto; }
+  .deck{ width:1280px !important; height:auto !important; overflow:visible !important; }
   .progress,.nav,.notes-toggle,.notes-panel{ display:none !important; }
   .slide{
     position:relative !important;
@@ -1122,11 +1126,15 @@ let cur = 0;
 
 document.getElementById('total').textContent = total;
 
-// Responsive scaling
+// Responsive scaling — fit 1280x720 into viewport (minus nav bar at bottom)
 function fit(){
-  const sx = window.innerWidth / 1280;
-  const sy = window.innerHeight / 720;
-  const s = Math.min(sx, sy);
+  const deck = document.getElementById('deck');
+  const navH = 64; // nav bar (46px) + bottom margin (16px) + small gap
+  const availW = window.innerWidth;
+  const availH = window.innerHeight - navH;
+  // size the deck to the available area so slide centers within it
+  if(deck){ deck.style.width = availW + 'px'; deck.style.height = availH + 'px'; }
+  const s = Math.min(availW / 1280, availH / 720, 1.2);
   document.documentElement.style.setProperty('--scale', s);
 }
 window.addEventListener('resize', fit);
