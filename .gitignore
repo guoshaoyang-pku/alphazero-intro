@@ -1,0 +1,23 @@
+# OS
+.DS_Store
+
+# Large temp dirs
+renders/
+review_shots/
+pdf_cmp/
+pdf_check/
+
+# Large external repos / papers
+alpha-zero-general/
+papers/
+
+# Build outputs (regeneratable)
+*.pptx
+# keep PDF + HTML (the shareable artifacts)
+
+# Python
+__pycache__/
+*.pyc
+
+# Office temp
+~$*

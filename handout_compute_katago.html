@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>算力估算与 KataGo 优化讲义</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background-color: #FAFAFA;
+    }
+    h1, h2, h3 { color: #0D1B3E; }
+    h1 { border-bottom: 3px solid #0D1B3E; padding-bottom: 10px; }
+    h2 { border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 40px; }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px 25px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      margin-bottom: 25px;
+      border-left: 5px solid #1565C0;
+    }
+    .card-orange { border-left-color: #E65100; }
+    .card-purple { border-left-color: #7B1FA2; }
+    .card-green { border-left-color: #2E7D32; }
+    .formula {
+      font-family: "Courier New", Courier, monospace;
+      background: #F3F4F6;
+      padding: 15px;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 1.1em;
+      margin: 15px 0;
+    }
+    .math { font-family: "Times New Roman", Times, serif; font-style: italic; }
+    table {
+      width: 100%; border-collapse: collapse; margin: 20px 0;
+      background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    th, td { border: 1px solid #E0E0E0; padding: 12px; text-align: left; }
+    th { background-color: #0D1B3E; color: white; }
+    tr:nth-child(even) { background-color: #F8F9FA; }
+    .highlight { color: #C62828; font-weight: bold; }
+    .note { font-size: 0.9em; color: #666; margin-top: -10px; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+  <h1>附加讲义：算力估算与 KataGo 进化范式</h1>
+  <p>为了向高性能计算与物理背景的罗院士讲解，本讲义对 AlphaGo Zero 的<strong>模型参数量</strong>与<strong>推理算力（MCTS 评估次数）</strong>进行了严格的量级估算，并系统梳理了开源社区（尤其是 KataGo）对这种“算力黑洞”进行的降维打击优化。</p>
+
+  <!-- Section 1: 参数量 -->
+  <h2>一、 AlphaGo Zero 模型参数量精算</h2>
+  <div class="card card-purple">
+    <h3>1. 网络结构拆解（以 20 ResBlock 版本为例）</h3>
+    <p>AlphaGo Zero 的核心是一个共享特征提取层的双头残差网络（ResNet），通道数统一为 256。</p>
+    <ul>
+      <li><strong>输入层：</strong> 19×19×17 的图像。初始卷积层为 3×3×256。参数量：<br>
+        <code>17 (in) × 256 (out) × 3×3 = 39,168</code>
+      </li>
+      <li><strong>残差块 (20个)：</strong> 每个 Block 包含 2 个 3×3 卷积层。<br>
+        单层参数：<code>256 × 256 × 3×3 ≈ 589,824</code><br>
+        单块参数：<code>589,824 × 2 ≈ 1.18 × 10⁶</code> (118万)<br>
+        20块总计：<code>1.18M × 20 ≈ 23,592,960</code> (2359万)
+      </li>
+      <li><strong>策略头 (Policy Head)：</strong> 1个 1×1 卷积 (降到2通道) + 全连接到 362 (361个交叉点+1个pass)。<br>
+        卷积：<code>256 × 2 × 1×1 = 512</code><br>
+        FC层：<code>(2 × 19 × 19) × 362 = 722 × 362 ≈ 261,364</code><br>
+        共计：<code>约 26 万</code>
+      </li>
+      <li><strong>价值头 (Value Head)：</strong> 1个 1×1 卷积 (降到1通道) + FC(256) + FC(1)。<br>
+        卷积：<code>256 × 1 × 1×1 = 256</code><br>
+        FC1：<code>(1 × 19 × 19) × 256 = 361 × 256 = 92,416</code><br>
+        FC2：<code>256 × 1 = 256</code><br>
+        共计：<code>约 9 万</code>
+      </li>
+    </ul>
+    <h3>2. 宏观结论</h3>
+    <table>
+      <tr>
+        <th>模型版本</th>
+        <th>总参数量</th>
+        <th>训练总局数</th>
+      </tr>
+      <tr>
+        <td><strong>AGZ (3天版)</strong> - 20个残差块</td>
+        <td><span class="highlight">~2400 万 (24M)</span></td>
+        <td>490 万局</td>
+      </tr>
+      <tr>
+        <td><strong>AGZ (40天版)</strong> - 40个残差块</td>
+        <td><span class="highlight">~4750 万 (47.5M)</span></td>
+        <td>2900 万局</td>
+      </tr>
+    </table>
+    <p class="note">对比：GPT-3 有 1750亿，目前大语言模型动辄千亿参数；AlphaGo Zero 是典型的“小模型、巨算力”，算力绝大多数被消耗在了搜索（推理）过程，而非单次前向传播。</p>
+  </div>
+
+  <!-- Section 2: 推理次数 -->
+  <h2>二、 算力黑洞：天文数字的推理次数估算</h2>
+  <p>自我强化学习之所以极度耗费算力，是因为生成一条训练数据需要极其庞大的 MCTS 模拟，每次模拟都需要调用一次神经网络（评估叶节点）。</p>
+  
+  <div class="card card-orange">
+    <h3>计算公式：训练过程中的推理（评估）总次数</h3>
+    <div class="formula">
+      Total Inferences = Total Games × Moves per Game × Simulations per Move
+    </div>
+    
+    <h4>以 AlphaGo Zero (3天 20-block 版本) 为例：</h4>
+    <ul>
+      <li><strong>生成总局数 (Total Games)：</strong> 4,900,000 局</li>
+      <li><strong>每局平均步数 (Moves/Game)：</strong> 围棋平均约 200 步（走到终局或投降）</li>
+      <li><strong>每步 MCTS 模拟数 (Sims/Move)：</strong> 1,600 次</li>
+    </ul>
+    
+    <h4>算力爆炸：</h4>
+    <p><code>4,900,000 × 200 × 1,600 = 1,568,000,000,000</code></p>
+    <div class="formula" style="background:#FFF3E0; border: 1px solid #FFCC80; color: #E65100; font-size:1.3em;">
+      ≈ 1.56 万亿次网络前向推理！ (1.56 × 10¹²)
+    </div>
+    <p>如果算上 40 天的 40-block 版本，推理次数高达 <strong>9.28 万亿次</strong>。每一次推理都需要计算一个 24M~47M 参数的 ResNet（单次推理约百亿 FLOPs，即 10 GFLOPs）。因此，<strong>生成数据消耗了 10²³ 量级的 FLOPs</strong>，这需要极其恐怖的 Google TPU 算力集群堆叠。</p>
+  </div>
+
+  
+    <h3>3. 训练样本量与模型参数的比例 (Data-to-Parameter Ratio)</h3>
+    <p>基于上述对局数，我们可以算出 AlphaGo Zero 的实际<strong>训练样本规模</strong>：</p>
+    <div class="formula" style="background:#E8F5E9; border: 1px solid #81C784; color: #2E7D32;">
+      总训练样本量 = 4,900,000 局 × 200 步/局 ≈ 9.8 亿 (约 1 Billion) 个样本
+    </div>
+    <p>每一个样本是一个 <code>(s_t, π_t, z)</code> 元组。由此可以得出与模型参数量的关键物理比例：</p>
+    <ul>
+      <li><strong>训练样本量：</strong> ~1 Billion (1B)</li>
+      <li><strong>模型参数量：</strong> ~24 Million (24M)</li>
+      <li><strong>数据-参数比 (Data-to-Parameter Ratio)：</strong> 1,000,000,000 / 24,000,000 ≈ <strong class="highlight">40 倍</strong></li>
+    </ul>
+    <p class="note"><strong>学术启示：</strong> 高达 40 倍的数据/参数比，意味着 AlphaGo Zero 处于极度“数据充沛”的过参数化训练状态。“小模型 + 海量高质自我对弈数据”把这 24M 参数的特征表达能力压榨到了物理极限，不仅避免了过拟合，还铸就了其超强的泛化能力。作为对比，目前千亿参数的大语言模型（LLM）由于高质量语料枯竭，其 Token/参数比例（如 Chinchilla Scaling Laws 所指出的最优比例约为 20 倍）往往勉强达标，难以做到 AlphaGo Zero 这样奢侈的 40 倍高质量监督。</p>
+
+  <!-- Section 3: KataGo -->
+  <h2>三、 凡人算力的救星：KataGo 范式改良</h2>
+  <p>AlphaGo Zero 的“大力出奇迹”证明了算法的上限，但也让科研机构和个人望而却步。后续开源社区（尤其是 <strong>KataGo</strong>）对其进行了关键的算法工程改造，用<strong>极少的算力（几十倍效率提升）</strong>达到了同等甚至更强的水平。</p>
+  
+  <div class="card card-green">
+    <h3>1. Playout Cap Randomization (访问量上限随机化) —— 击碎“万亿次”推理</h3>
+    <p><strong>痛点：</strong> 每步死磕 1600 次模拟，大量时间浪费在对局的“无聊/必然”步骤上。</p>
+    <p><strong>KataGo 的改良：</strong> 训练生成数据时，<strong>约 75%~90% 的回合只给 50~100 次 MCTS 模拟</strong>，只在剩下的 10%~25% 回合给 800~1000 次模拟以获得高质量的深度搜索（用于计算 Value 目标和高智商战术）。<br>
+    <strong>结果：</strong> 单局推理次数从 <code>200 × 1600 = 320,000</code> 锐减到 <code>约 40,000</code>，直接提速将近 10 倍！且这种随机化增加了数据的多样性，起到了极好的正则化作用。</p>
+    
+    <h3>2. TD-Bootstrap 作为辅助价值目标 (Auxiliary Value Target)</h3>
+    <p><strong>痛点：</strong> AGZ 使用纯 MC（只有终局 1 bit 的 ±1），对于一局 200 步的棋，这个信号极度稀疏且方差巨大。开头几步的预测极其随机，收敛极慢。</p>
+    <p><strong>KataGo 的改良：</strong> 虽保留终局 MC 目标，但额外引入 <strong>TD (时序差分) 回报</strong>，强迫当前的预测去匹配 <em>未来几步（如 t+N）的 MCTS Q值</em>。把短期的确定性（低方差）借给了长期的价值网络。<br>
+    <strong>结果：</strong> 价值网络的收敛速度提升了数倍，在模型训练极早期就能有效分辨好坏棋。</p>
+
+    <h3>3. 多任务学习 (Multi-Task Learning)：压榨每一滴环境信息</h3>
+    <p><strong>痛点：</strong> AGZ 对于一整局 19×19 棋盘，最后只反馈一个胜负 (+1/-1)。网络在盲人摸象。</p>
+    <p><strong>KataGo 的改良：</strong> 强迫网络预测更丰富的局部环境信息。
+    <ul>
+      <li><strong>所有权预测 (Ownership)：</strong> 预测终局时每个交叉点属于谁（361维的密集标签），强制网络理解“地盘”。</li>
+      <li><strong>分数预测 (Score)：</strong> 不仅预测胜负，还要预测赢/输多少目（输出一个分数分布），提供更平滑的梯度信号。</li>
+    </ul>
+    <strong>物理类比：</strong> 就像 QCD 中，如果只测量总散射截面（单一标量）去反推强子内部结构极度困难；但如果能测出末态的所有粒子能动量分布（多任务局部预测），反推核子结构函数（网络特征表示）就会快得多。</p>
+  </div>
+
+  
+  <!-- Section 4: Importance Sampling -->
+  <h2>四、 低算力外挂 Heuristic 必须遵循的数学框架：重要性采样 (Importance Sampling)</h2>
+  <p>在个人算力极其受限、或者模型极早期阶段时，我们往往需要手动设计一些 Heuristic（例如：<strong>子力优势计算器、快速目数估算器</strong>）来强行引导树的搜索。但这里潜伏着一个致命的数学陷阱。</p>
+  
+  <div class="card card-purple" style="border-left-color: #00838F;">
+    <h3>1. 强加 Heuristic 的数学危机：破坏无偏性</h3>
+    <p>原版 MCTS 的卓越之处在于它是<strong>渐进无偏 (Asymptotically Unbiased)</strong> 的。如果我们粗暴地把人工的“子力优势”加到 PUCT 公式的 Q 值或 P 值中，树的采样分布（访问量 $N$）就会被人类的偏见永久性扭曲，导致最终输出的 $\pi$ 分布严重有偏，进而带偏整个自我强化闭环。</p>
+
+    <h3>2. 正确做法：重要性采样 (Importance Sampling)</h3>
+    <p>为了在“加速搜索”和“保持无偏”之间取得完美平衡，必须使用蒙特卡洛方法中的核心武器：<strong>重要性采样</strong>。</p>
+    <ul>
+      <li><strong>目标分布 $p(x)$</strong>：原版无偏的 MCTS 搜索分布。</li>
+      <li><strong>提议分布 $q(x)$</strong>：叠加了“子力优势/目数估算”等 Heuristic 后的有偏搜索分布（它能更快发现好棋，方差小）。</li>
+    </ul>
+    <p>在 MCTS 的 Backup（回传）和最终生成策略 $\pi$ 时，不能直接使用原本的均匀加权（$Q = W/N$），而是必须为每个采样的叶节点引入<strong>重要性权重 (Importance Weight)</strong>：</p>
+    <div class="formula">
+      w_i = p(x_i) / q(x_i)
+    </div>
+    <p>通过权重补偿：$Q = \sum (w_i \cdot v_i) / \sum w_i$。这样，我们既利用了人类 Heuristic 让搜索树迅速朝着“吃子、占地”等有意义的分支生长（提升采样效率），又通过数学上的 Reweighting 保证了最终提取的 Q 值和 $\pi$ 分布的期望值是<strong>绝对无偏的</strong>。</p>
+    
+    <h3>3. 与物理学的深度共鸣 (Lattice QCD / VMC)</h3>
+    <p class="note"><strong>💡 罗院士一定会心领神会的点：</strong>这与<strong>格点量子色动力学 (Lattice QCD)</strong> 和变分蒙特卡洛 (VMC) 中的操作完全同构！在计算路径积分时，我们绝不可能用均匀分布去盲目采样组态（那样算到宇宙毁灭也无法收敛）。我们必然会构造一个包含物理直觉的 <strong>Trial Wavefunction</strong> 或修改过的 Action 来做 Metropolis-Hastings 采样（即 Heuristic 提议分布 $q$），然后通过 <strong>Reweighting（重新加权）</strong> 恢复出真实的物理可观测量期望。将 Heuristic 作为提议分布而非绝对真理，是保持数学纯洁性的唯一法门。</p>
+  </div>
+
+  <h2>五、 总结对比</h2>
+  <table>
+    <tr>
+      <th>维度</th>
+      <th>AlphaGo Zero</th>
+      <th>KataGo (优化后)</th>
+    </tr>
+    <tr>
+      <td><strong>数据生成效率</strong></td>
+      <td>极低（固定1600次/步）</td>
+      <td>极高（动态 50~800次/步，省近10倍算力）</td>
+    </tr>
+    <tr>
+      <td><strong>价值(v)信号源</strong></td>
+      <td>纯终局 MC (1 bit，极度稀疏，方差大)</td>
+      <td>终局 MC + 局部 TD Bootstrap (密集，方差小)</td>
+    </tr>
+    <tr>
+      <td><strong>辅助任务</strong></td>
+      <td>无，网络自己悟</td>
+      <td>预测所有权、预测具体比分，密集特征监督</td>
+    </tr>
+    <tr>
+      <td><strong>收敛到高水平速度</strong></td>
+      <td>需要 Google 级别 TPU 跑数天/数周</td>
+      <td>单块/几块民用高端显卡 几周即可追平早期AGZ</td>
+    </tr>
+  </table>
+  <br>
+  <p><strong>致罗院士的讲解重点：</strong><br>AlphaGo Zero 的突破在于<strong>思想的纯粹性</strong>（抛弃人类知识，用 MCTS 作为策略迭代算子闭环）；但其工程实现是暴力的（万亿次推理）。实际落地和物理/超算领域的启发是：<strong>纯粹的 MC 算法方差过大、耗时太长，最终还是需要用 TD 截断（Bootstrap）、动态算力分配（Playout Cap）以及辅助标量场（所有权预测）等工程/物理直觉手段来收敛和落地。</strong></p>
+
+</body>
+</html>

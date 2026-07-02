@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaGo Zero 训练样本与信息传播</title>
+<style>
+  :root {
+    --navy: #0D1B3E;
+    --blue: #1565C0;
+    --light-blue: #42A5F5;
+    --teal: #00897B;
+    --gold: #E8A838;
+    --red: #E53935;
+    --green: #43A047;
+    --orange: #FB8C00;
+    --gray: #757575;
+    --light-gray: #E0E0E0;
+    --bg: #F8F9FA;
+    --text: #1A1A2E;
+    --purple: #7B1FA2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Noto Sans CJK SC", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 40px 20px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 {
+    font-size: 32px; color: var(--navy); margin-bottom: 8px;
+    border-bottom: 4px solid var(--gold); padding-bottom: 12px;
+  }
+  .subtitle { color: var(--gray); font-size: 16px; margin-bottom: 40px; }
+  h2 {
+    font-size: 24px; color: var(--navy); margin: 48px 0 20px;
+    padding-left: 16px; border-left: 6px solid var(--blue);
+  }
+  h3 { font-size: 18px; color: var(--navy); margin: 28px 0 14px; }
+  p { margin-bottom: 14px; font-size: 16px; }
+  .callout {
+    background: #FFF8E1; border-left: 5px solid var(--gold);
+    padding: 18px 24px; margin: 24px 0; border-radius: 0 8px 8px 0;
+  }
+  .callout strong { color: var(--orange); }
+  .warn {
+    background: #FFEBEE; border-left: 5px solid var(--red);
+    padding: 18px 24px; margin: 24px 0; border-radius: 0 8px 8px 0;
+  }
+  .warn strong { color: var(--red); }
+  .ok {
+    background: #E8F5E9; border-left: 5px solid var(--green);
+    padding: 18px 24px; margin: 24px 0; border-radius: 0 8px 8px 0;
+  }
+  .ok strong { color: var(--green); }
+  .info {
+    background: #E3F2FD; border-left: 5px solid var(--blue);
+    padding: 18px 24px; margin: 24px 0; border-radius: 0 8px 8px 0;
+  }
+  .info strong { color: var(--blue); }
+  table {
+    width: 100%; border-collapse: collapse; margin: 24px 0;
+    background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-radius: 8px;
+    overflow: hidden;
+  }
+  th, td { padding: 14px 18px; text-align: left; border-bottom: 1px solid var(--light-gray); }
+  th { background: var(--navy); color: white; font-size: 14px; font-weight: 600; }
+  td { font-size: 15px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f5f5f5; }
+  code {
+    background: #f0f0f0; padding: 2px 8px; border-radius: 4px;
+    font-family: "Menlo", "SF Mono", monospace; font-size: 14px; color: var(--red);
+  }
+  .formula {
+    text-align: center; font-size: 20px; margin: 24px 0; padding: 20px;
+    background: var(--navy); color: white; border-radius: 8px;
+    font-family: "Times New Roman", serif;
+  }
+  /* Sample count visualizer */
+  .sample-viz {
+    background: white; border-radius: 12px; padding: 28px; margin: 28px 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  .game-trace {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    flex-wrap: wrap; margin: 20px 0;
+  }
+  .state-node {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--light-gray); display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--navy); font-weight: bold; flex-shrink: 0;
+    transition: all 0.3s;
+  }
+  .state-node.terminal { background: var(--red); color: white; }
+  .arrow { color: var(--gray); font-size: 18px; flex-shrink: 0; }
+  .sample-pair {
+    display: inline-block; background: var(--blue); color: white;
+    padding: 6px 12px; border-radius: 6px; font-size: 12px; margin: 2px;
+    font-weight: 600;
+  }
+  .z-label {
+    display: inline-block; background: var(--red); color: white;
+    padding: 6px 14px; border-radius: 6px; font-size: 14px; font-weight: bold;
+  }
+  .counter {
+    font-size: 28px; font-weight: bold; color: var(--blue);
+    text-align: center; margin: 16px 0;
+  }
+  /* Info propagation animation */
+  .propagation-box {
+    background: white; border-radius: 12px; padding: 28px; margin: 28px 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  .prop-track {
+    display: flex; align-items: center; gap: 0; margin: 20px 0;
+    justify-content: center; flex-wrap: wrap;
+  }
+  .prop-node {
+    width: 60px; height: 60px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: bold; flex-shrink: 0;
+    border: 3px solid; transition: all 0.5s;
+  }
+  .prop-arrow {
+    width: 30px; height: 3px; background: var(--gray); position: relative; flex-shrink: 0;
+  }
+  .prop-arrow::after {
+    content: ''; position: absolute; right: -6px; top: -4px;
+    border-left: 8px solid var(--gray); border-top: 5px solid transparent; border-bottom: 5px solid transparent;
+  }
+  .legend-item { display: inline-flex; align-items: center; gap: 8px; margin: 0 14px; font-size: 14px; }
+  .legend-dot { width: 16px; height: 16px; border-radius: 50%; }
+  .controls { text-align: center; margin: 20px 0; }
+  .btn {
+    background: var(--blue); color: white; border: none; padding: 10px 24px;
+    border-radius: 6px; font-size: 14px; cursor: pointer; margin: 0 6px;
+    font-family: inherit; font-weight: 600; transition: background 0.2s;
+  }
+  .btn:hover { background: var(--navy); }
+  .btn.gold { background: var(--gold); color: var(--navy); }
+  .btn.gold:hover { background: #d49530; }
+  .btn.red { background: var(--red); }
+  .btn.red:hover { background: #c62828; }
+  .stage-label {
+    text-align: center; font-size: 14px; color: var(--gray); margin-top: 12px;
+    min-height: 20px;
+  }
+  /* Gradient bar */
+  .gradient-bar {
+    height: 40px; border-radius: 20px; margin: 20px 0; position: relative;
+    background: linear-gradient(to right, var(--red) 0%, var(--orange) 30%, var(--gold) 50%, var(--light-blue) 70%, var(--blue) 100%);
+  }
+  .gradient-labels { display: flex; justify-content: space-between; font-size: 13px; color: var(--gray); margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>AlphaGo Zero：训练样本与信息传播</h1>
+  <p class="subtitle">—— 每局产生多少样本？v 头的稀疏信号如何学起来？——</p>
+
+  <!-- ── Section 1: 样本数澄清 ── -->
+  <h2>1. 每局产生多少训练样本？</h2>
+
+  <div class="warn">
+    <strong>常见误解：</strong>"每局只有 1 个样本，因为只有一个终局 z。"
+  </div>
+
+  <div class="ok">
+    <strong>事实：</strong>每局产生约 <strong>200 个训练样本</strong>（每步棋一个），不是 1 个。
+  </div>
+
+  <div class="sample-viz">
+    <p style="text-align:center; color:var(--gray); margin-bottom:20px;">一盘自我对弈的轨迹（~200 步）：</p>
+    <div class="game-trace">
+      <div class="state-node">s₀</div>
+      <div class="arrow">→</div>
+      <div class="state-node">s₁</div>
+      <div class="arrow">→</div>
+      <div class="state-node">s₂</div>
+      <div class="arrow">→</div>
+      <div style="color:var(--gray); padding:0 8px;">···</div>
+      <div class="arrow">→</div>
+      <div class="state-node">s<sub>T-1</sub></div>
+      <div class="arrow">→</div>
+      <div class="state-node terminal">s<sub>T</sub><br>z=±1</div>
+    </div>
+    <p style="text-align:center; margin: 20px 0;">终局产生<strong>一个</strong> z，然后<strong>每一步</strong>都和这个 z 配对：</p>
+    <div style="text-align:center;">
+      <span class="sample-pair">(s₀, π₀, z)</span>
+      <span class="sample-pair">(s₁, π₁, z)</span>
+      <span class="sample-pair">(s₂, π₂, z)</span>
+      <span style="color:var(--gray);">···</span>
+      <span class="sample-pair">(s<sub>T</sub>, π<sub>T</sub>, z)</span>
+    </div>
+    <div class="counter">≈ 200 个样本 / 局</div>
+  </div>
+
+  <table>
+    <tr>
+      <th></th>
+      <th>p 头（策略）</th>
+      <th>v 头（价值）</th>
+    </tr>
+    <tr>
+      <td><strong>每局样本数</strong></td>
+      <td>200（每步一个 π<sub>t</sub>）</td>
+      <td>200（每步一个 s<sub>t</sub>）</td>
+    </tr>
+    <tr>
+      <td><strong>标签维度</strong></td>
+      <td>362 维分布（高维稠密）</td>
+      <td>1 维标量（低维稀疏）</td>
+    </tr>
+    <tr>
+      <td><strong>标签是否独立</strong></td>
+      <td>是（每步 π<sub>t</sub> 不同）</td>
+      <td><strong>否</strong>（200 个样本共享同一 z）</td>
+    </tr>
+    <tr>
+      <td><strong>每局信息量</strong></td>
+      <td>~400 bits（200 × ~2 bits）</td>
+      <td>~1 bit（一个 z）</td>
+    </tr>
+  </table>
+
+  <div class="callout">
+    <strong>关键：</strong>v 头的"稀疏"不是说样本少（有 200 个），而是<strong>标签的信息量低</strong>——200 个样本只共享 1 bit 的真实信号。p 头每步都有独立的 362 维分布标签，信息密度高得多。
+  </div>
+
+  <!-- ── Section 2: 早期信息传播 ── -->
+  <h2>2. 早期训练：信息从终局反向传播</h2>
+
+  <p>训练初期网络随机，但<strong>终局 z 永远真实</strong>。问题变成：这个真实的 z，能多快"教会"不同位置的 v(s)？</p>
+
+  <div class="info">
+    <strong>核心观察：</strong>z 与<strong>残局</strong>局面强相关（离终局近，因果关系直接），与<strong>开局</strong>局面弱相关（中间 200 步充满随机性）。所以 v 头对残局局面的估计<strong>先变准</strong>，对开局局面的估计<strong>后变准</strong>。
+  </div>
+
+  <div class="propagation-box">
+    <p style="text-align:center; margin-bottom:20px;"><strong>MC 值学习（AlphaGo Zero 的 v 头）：信息从终局反向传播</strong></p>
+    <div class="prop-track" id="mcTrack">
+      <div class="prop-node" style="border-color:var(--gray); background:white; color:var(--gray);">s₀<br><small>开局</small></div>
+      <div class="prop-arrow"></div>
+      <div class="prop-node" style="border-color:var(--gray); background:white; color:var(--gray);">s₁</div>
+      <div class="prop-arrow"></div>
+      <div class="prop-node" style="border-color:var(--gray); background:white; color:var(--gray);">s₂</div>
+      <div class="prop-arrow"></div>
+      <div style="color:var(--gray); padding:0 8px;">···</div>
+      <div class="prop-arrow"></div>
+      <div class="prop-node" style="border-color:var(--gray); background:white; color:var(--gray);">s<sub>T-2</sub></div>
+      <div class="prop-arrow"></div>
+      <div class="prop-node" style="border-color:var(--gray); background:white; color:var(--gray);">s<sub>T-1</sub><br><small>残局</small></div>
+      <div class="prop-arrow"></div>
+      <div class="prop-node" style="border-color:var(--red); background:var(--red); color:white;">s<sub>T</sub><br><small>z</small></div>
+    </div>
+    <div class="controls">
+      <button class="btn red" onclick="animateMC()">▶ 播放：信息反向传播</button>
+      <button class="btn" onclick="resetMC()">↺ 重置</button>
+    </div>
+    <div class="stage-label" id="mcStage">点击播放，观察 v 准确度的空间梯度</div>
+    <div style="margin-top:24px;">
+      <div class="gradient-bar"></div>
+      <div class="gradient-labels">
+        <span>开局 v 学得慢</span>
+        <span>残局 v 先变准</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>类比：</strong>这像物理中的<strong>扩散方程</strong>——边界条件（终局 z）先影响邻近区域（残局 v），再逐渐扩散到远处（开局 v）。v 的准确度沿轨迹呈"残局→开局"的空间梯度。
+  </div>
+
+  <!-- ── Section 3: MC vs TD ── -->
+  <h2>3. MC vs TD：信息传播方向相反</h2>
+
+  <table>
+    <tr>
+      <th></th>
+      <th>MC（AlphaGo Zero v 头）</th>
+      <th>TD(0)（传统 RL）</th>
+    </tr>
+    <tr>
+      <td><strong>标签</strong></td>
+      <td>真实终局 z（完整回报）</td>
+      <td>R + γV(s')（一步 bootstrap）</td>
+    </tr>
+    <tr>
+      <td><strong>信息传播</strong></td>
+      <td><strong>终局 → 开局</strong>（反向覆盖）</td>
+      <td><strong>每步前传</strong>（bootstrap 链）</td>
+    </tr>
+    <tr>
+      <td><strong>偏差</strong></td>
+      <td>无偏（z 真实）</td>
+      <td>有偏（用估计 V）</td>
+    </tr>
+    <tr>
+      <td><strong>方差</strong></td>
+      <td>高（200 步累积随机性）</td>
+      <td>低（单步）</td>
+    </tr>
+    <tr>
+      <td><strong>早期学习</strong></td>
+      <td>残局先准，开局后准</td>
+      <td>各处均匀前传</td>
+    </tr>
+  </table>
+
+  <div class="propagation-box">
+    <p style="text-align:center; margin-bottom:20px;"><strong>TD(0)：信息每步向前 bootstrap</strong></p>
+    <div class="prop-track">
+      <div class="prop-node" style="border-color:var(--blue); background:var(--blue); color:white;">s₀<br><small>v≈</small></div>
+      <div class="prop-arrow"></div>
+      <div class="prop-node" style="border-color:var(--blue); background:var(--blue); color:white;">s₁<br><small>v≈</small></div>
+      <div class="prop-arrow"></div>
+      <div class="prop-node" style="border-color:var(--blue); background:var(--blue); color:white;">s₂<br><small>v≈</small></div>
+      <div class="prop-arrow"></div>
+      <div style="color:var(--gray); padding:0 8px;">···</div>
+      <div class="prop-arrow"></div>
+      <div class="prop-node" style="border-color:var(--blue); background:var(--blue); color:white;">s<sub>T-1</sub><br><small>≈z</small></div>
+      <div class="prop-arrow"></div>
+      <div class="prop-node" style="border-color:var(--red); background:var(--red); color:white;">s<sub>T</sub><br><small>z</small></div>
+    </div>
+    <p style="text-align:center; color:var(--gray); font-size:14px;">V(s₀)≈V(s₁)≈...≈V(s_{T-1})≈z，bootstrap 链从终端向开局逐层前传</p>
+  </div>
+
+  <!-- ── Section 4: 为什么能学起来 ── -->
+  <h2>4. v 信号这么稀疏，为什么还能学起来？</h2>
+
+  <div class="ok">
+    <strong>三个补偿机制：</strong>
+  </div>
+
+  <h3>① 海量对局压方差</h3>
+  <p>训练 3 天 ≈ 490 万局 × 200 步 ≈ <strong>10 亿个 (s, π, z) 样本</strong>。z 虽每局只 1 bit，但同一类开局局面在不同对局里会出现很多次，v 逐渐学到"这类局面胜率约 0.6"的统计平均。</p>
+
+  <h3>② MCTS 搜索提供中间估值</h3>
+  <p>训练标签是粗粒度 z，但<strong>搜索过程</strong>用 v(s<sub>L</sub>) 给叶节点估值——这是网络当前的细粒度判断。v 学准后，Q(s,a) 沿路径平均，近似"走这步的真实期望"。所以 z 是稀疏硬标签，v 网络通过反复搜索-训练，把稀疏信号<strong>插值</strong>成连续胜率曲面。</p>
+
+  <h3>③ 正反馈闭环</h3>
+  <div class="propagation-box" style="background:var(--navy); color:white;">
+    <div style="text-align:center; font-size:18px; line-height:2.2;">
+      随机 θ<sub>0</sub> → 弱 v → 弱但有结构的 π<br>
+      ↓ 训练（z 真实）<br>
+      θ<sub>1</sub> → v 稍准（残局先准）→ π 稍强<br>
+      ↓ 训练<br>
+      θ<sub>2</sub> → v 更准 → π 更强 → 下出的对局质量更高 → z 归因更准<br>
+      ↓ &nbsp; ↻ 正反馈<br>
+      ... 收敛到 θ*
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>点燃点：</strong>第一局网络虽随机，但 (1) 围棋规则确定 → 终局 z 真实；(2) 随机 v 有方差 → PUCT 会偏好某些分支 → π 有结构。有结构就能学，学了就更强，更强就更准——<strong>不需要任何人类知识点燃</strong>。
+  </div>
+
+  <!-- ── Section 5: 加权问题 ── -->
+  <h2>5. 关键澄清：v 网络与"统计胜率"是否加权？</h2>
+
+  <div class="warn">
+    <strong>常见误解：</strong>"v 网络只是 heuristic，搜索时应该把 v 和实际统计得到的胜率加权起来用吧？"
+  </div>
+
+  <div class="ok">
+    <strong>事实：</strong>AlphaGo Zero 搜索时<strong>只有一个信号</strong>（v 网络），不存在"v 与统计胜率的加权"。加权是上一代 AlphaGo Lee 的机制，Zero 砍掉 rollout 后就不需要了。
+  </div>
+
+  <h3>AlphaGo Lee（2016）：两个独立信号，固定加权</h3>
+
+  <p>Lee 时代的叶节点价值来自<strong>两个独立来源</strong>：</p>
+
+  <div class="formula">
+    v<sub>leaf</sub> = (1 − λ) · v<sub>θ</sub>(s<sub>L</sub>) + λ · z<sub>rollout</sub>, &nbsp;&nbsp; λ = 0.5（固定）
+  </div>
+
+  <table>
+    <tr>
+      <th>信号</th>
+      <th>来源</th>
+      <th>性质</th>
+    </tr>
+    <tr>
+      <td><strong>v<sub>θ</sub>(s<sub>L</sub>)</strong></td>
+      <td>价值网络预测</td>
+      <td>heuristic（快、有偏、低方差）</td>
+    </tr>
+    <tr>
+      <td><strong>z<sub>rollout</sub></strong></td>
+      <td>rollout policy 走到终局的真实结果</td>
+      <td>统计胜率（慢、无偏、高方差）</td>
+    </tr>
+    <tr>
+      <td><strong>λ = 0.5</strong></td>
+      <td>人工调参的固定权重</td>
+      <td>一半信网络、一半信 rollout</td>
+    </tr>
+  </table>
+
+  <p>Lee 需要这个加权，因为<strong>当时 v 网络不够准</strong>，需要 rollout 提供独立的"真实统计"来纠偏。λ=0.5 是论文里调出来的经验值。</p>
+
+  <h3>AlphaGo Zero（2017）：砍掉 rollout = 砍掉第二信号 = 无需加权</h3>
+
+  <div class="formula">
+    v<sub>leaf</sub> = v<sub>θ</sub>(s<sub>L</sub>) &nbsp;&nbsp;&nbsp; <span style="color:#E8A838;">（仅此一个，无加权）</span>
+  </div>
+
+  <p>Zero 砍掉 rollout 后，叶值<strong>只有一个来源</strong>。没有第二个独立信号，自然不存在加权问题。</p>
+
+  <div class="warn">
+    <strong>那 Q = W/N 算什么？</strong>——它看起来像"统计胜率"，但<strong>不是独立信号</strong>：
+  </div>
+
+  <div class="formula">
+    Q(s,a) = W/N = (1/N) Σ<sub>k=1</sub><sup>N</sup> v<sub>θ</sub>(s<sub>L<sub>k</sub></sub>)
+  </div>
+
+  <p>Q 就是<strong>同一次搜索中多次访问的 v 预测值的均匀平均</strong>。W 和 N 只是记账用的累加器，不引入新信息。所以：</p>
+
+  <table>
+    <tr>
+      <th>误解</th>
+      <th>事实</th>
+    </tr>
+    <tr>
+      <td>"v 是 heuristic，Q 是统计胜率，两者加权"</td>
+      <td>Q 是 v 的衍生量（平均），不是独立信号，无需加权</td>
+    </tr>
+    <tr>
+      <td>"早期 v 差，应该降低 v 权重、多用统计"</td>
+      <td>Zero 没有这个机制——早期 v 差，Q 也差（因为是差的 v 的平均）</td>
+    </tr>
+    <tr>
+      <td>"加权权重随训练自适应调整"</td>
+      <td>不存在。Zero 既无 λ 加权，也无自适应</td>
+    </tr>
+  </table>
+
+  <h3>三个层面的精确回答</h3>
+
+  <table>
+    <tr>
+      <th>层面</th>
+      <th>机制</th>
+      <th>权重</th>
+    </tr>
+    <tr>
+      <td><strong>搜索时（叶值）</strong></td>
+      <td>v<sub>θ</sub>(s<sub>L</sub>) 单一信号</td>
+      <td>无加权（Lee 是 0.5/0.5）</td>
+    </tr>
+    <tr>
+      <td><strong>搜索时（Q 平均）</strong></td>
+      <td>Q = (1/N) Σ v<sub>k</sub> 均匀平均</td>
+      <td>固定 1/N，不随训练调整</td>
+    </tr>
+    <tr>
+      <td><strong>训练时（损失）</strong></td>
+      <td>(z − v)²，z 是硬标签</td>
+      <td>z 全权重，不与 v 混合</td>
+    </tr>
+  </table>
+
+  <div class="info">
+    <strong>为什么 Zero 敢砍掉第二个信号？</strong>Lee 需要 rollout 的加权，因为 v 网络不够准。Zero 的赌注是：<strong>v 网络会变得足够准，rollout 反而冗余且慢</strong>。代价是早期 v 差时搜索也差，但靠正反馈闭环（v 准一点 → π 强一点 → 对局质量高 → z 归因准 → v 更准）快速爬出低谷。论文证明这个赌注赢了：Zero 用 1600 次模拟就超过 Lee 的 10000 次。
+  </div>
+
+  <div class="callout">
+    <strong>一句话：</strong>v 网络在 AlphaGo Zero 里确实起 heuristic 作用（搜索时评估叶节点），但<strong>它是唯一的信号源</strong>，Q 只是它的平均、不是独立统计量，所以<strong>不存在"v 与统计胜率的加权"</strong>——那是 Lee 的机制。Zero 靠正反馈闭环让 v 自我变准，而非靠加权来补偿早期不准。
+  </div>
+
+  <!-- ── Section 6: 总结对照 ── -->
+  <h2>6. 总结：p 头与 v 头的训练对比</h2>
+
+  <table>
+    <tr>
+      <th></th>
+      <th>p 头（策略蒸馏）</th>
+      <th>v 头（MC 值学习）</th>
+    </tr>
+    <tr>
+      <td><strong>损失</strong></td>
+      <td>−π<sup>⊤</sup> log p（交叉熵）</td>
+      <td>(z − v)²（MSE）</td>
+    </tr>
+    <tr>
+      <td><strong>标签来源</strong></td>
+      <td>MCTS 搜索分布（自生成）</td>
+      <td>终局结果 z（真实）</td>
+    </tr>
+    <tr>
+      <td><strong>标签密度</strong></td>
+      <td>高（362 维，每步独立）</td>
+      <td>低（1 bit，全局共享）</td>
+    </tr>
+    <tr>
+      <td><strong>反事实</strong></td>
+      <td><strong>有</strong>（MCTS 探索了所有动作）</td>
+      <td>无（只看实际走的那盘）</td>
+    </tr>
+    <tr>
+      <td><strong>收敛速度</strong></td>
+      <td>快（梯度覆盖全动作）</td>
+      <td>慢（论文 Fig.2 价值损失下降慢）</td>
+    </tr>
+    <tr>
+      <td><strong>学习范式</strong></td>
+      <td>策略蒸馏 / 模仿学习</td>
+      <td>蒙特卡洛值学习（MC, λ=1）</td>
+    </tr>
+  </table>
+
+  <div class="info" style="margin-top:40px;">
+    <strong>一句话收口：</strong>每局产生 ~200 个样本（不是 1 个），但 v 头的 200 个样本共享 1 bit 标签 z，信息密度远低于 p 头的 200 × 362 维。早期 v 对残局先准、开局后准——信息从终局反向传播，这是 MC 的特征（与 TD 的前传相反）。靠海量对局 + MCTS 中间估值 + 正反馈闭环补偿稀疏性，最终学出连续胜率曲面。
+  </div>
+
+</div>
+
+<script>
+let mcAnimating = false;
+function animateMC() {
+  if (mcAnimating) return;
+  mcAnimating = true;
+  const nodes = document.querySelectorAll('#mcTrack .prop-node');
+  const stage = document.getElementById('mcStage');
+  const total = nodes.length;
+  // Start from terminal (last node) and move backward
+  let step = 0;
+  function colorNode(i) {
+    const node = nodes[i];
+    if (!node) return;
+    const dist = (total - 1 - i); // 0 at terminal, increasing toward start
+    const colors = [
+      {bg: '#43A047', border: '#43A047', text: 'white'},   // terminal: green (most accurate)
+      {bg: '#66BB6A', border: '#66BB6A', text: 'white'},   // near terminal
+      {bg: '#FFB74D', border: '#FFB74D', text: '#1A1A2E'}, // middle
+      {bg: '#FF9800', border: '#FF9800', text: '#1A1A2E'}, // early-middle
+      {bg: '#EF5350', border: '#EF5350', text: 'white'},   // early (least accurate)
+    ];
+    const c = colors[Math.min(dist, colors.length - 1)];
+    node.style.background = c.bg;
+    node.style.borderColor = c.border;
+    node.style.color = c.text;
+  }
+  function resetNode(i) {
+    const node = nodes[i];
+    if (!node) return;
+    node.style.background = 'white';
+    node.style.borderColor = '#757575';
+    node.style.color = '#757575';
+  }
+
+  // Reset all except terminal
+  for (let i = 0; i < total - 1; i++) resetNode(i);
+
+  const stages = [
+    '终局 z = ±1（真实标签）',
+    'v(s_{T-1}) 先学准：离终局 1 步，z 直接相关',
+    'v(s_{T-2}) 逐渐学准：离终局 2 步',
+    '信息继续反向传播...',
+    'v(s₀) 最后学准：离终局 200 步，需大量对局积累'
+  ];
+
+  let idx = total - 2; // start from second-to-last
+  let stageIdx = 1;
+  function next() {
+    if (idx < 0) {
+      mcAnimating = false;
+      stage.textContent = '✓ 信息已从终局反向传播到开局（实际需大量对局累积）';
+      return;
+    }
+    colorNode(idx);
+    stage.textContent = stages[Math.min(stageIdx, stages.length - 1)];
+    stageIdx++;
+    idx--;
+    setTimeout(next, 500);
+  }
+  stage.textContent = stages[0];
+  setTimeout(next, 600);
+}
+
+function resetMC() {
+  mcAnimating = false;
+  const nodes = document.querySelectorAll('#mcTrack .prop-node');
+  const stage = document.getElementById('mcStage');
+  for (let i = 0; i < nodes.length - 1; i++) {
+    nodes[i].style.background = 'white';
+    nodes[i].style.borderColor = '#757575';
+    nodes[i].style.color = '#757575';
+  }
+  stage.textContent = '点击播放，观察 v 准确度的空间梯度';
+}
+</script>
+</body>
+</html>

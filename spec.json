@@ -1,0 +1,3511 @@
+{
+  "width": 13.333,
+  "height": 7.5,
+  "slides": [
+    {
+      "background": "0D1B3E",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 5.8,
+          "w": 13.333,
+          "h": 1.7,
+          "fill": "0A1128"
+        },
+        {
+          "type": "text",
+          "text": "AlphaGo Zero 原理介绍",
+          "x": 1,
+          "y": 1.6,
+          "w": 11.333,
+          "h": 1.4,
+          "font_size": 42,
+          "color": "FFFFFF",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "从蒙特卡洛树搜索到自我博弈强化学习",
+          "x": 1.5,
+          "y": 3.2,
+          "w": 10.333,
+          "h": 0.8,
+          "font_size": 20,
+          "color": "E8A838",
+          "bold": false,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "汇报人：郭绍阳",
+          "x": 1,
+          "y": 6.0,
+          "w": 5,
+          "h": 0.6,
+          "font_size": 16,
+          "color": "90A4AE",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "2026 年 7 月",
+          "x": 7,
+          "y": 6.0,
+          "w": 5,
+          "h": 0.6,
+          "font_size": 16,
+          "color": "90A4AE",
+          "bold": false,
+          "align": "right",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 0.15,
+          "h": 7.5,
+          "fill": "0D1B3E"
+        },
+        {
+          "type": "text",
+          "text": "目录",
+          "x": 0.8,
+          "y": 0.4,
+          "w": 5,
+          "h": 0.7,
+          "font_size": 32,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0.8,
+          "y": 1.2,
+          "w": 3,
+          "h": 0.05,
+          "fill": "E8A838"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 1.2,
+          "y": 2.0,
+          "w": 0.8,
+          "h": 0.8,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "I",
+          "x": 1.2,
+          "y": 2.0,
+          "w": 0.8,
+          "h": 0.8,
+          "font_size": 24,
+          "color": "FFFFFF",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "蒙特卡洛树搜索 (MCTS)",
+          "x": 2.5,
+          "y": 2.0,
+          "w": 8,
+          "h": 0.4,
+          "font_size": 20,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "博弈树搜索 · UCT公式 · 四阶段流程 · 性质分析",
+          "x": 2.5,
+          "y": 2.5,
+          "w": 9,
+          "h": 0.4,
+          "font_size": 14,
+          "color": "757575",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 1.2,
+          "y": 3.5,
+          "w": 0.8,
+          "h": 0.8,
+          "fill": "E53935"
+        },
+        {
+          "type": "text",
+          "text": "II",
+          "x": 1.2,
+          "y": 3.5,
+          "w": 0.8,
+          "h": 0.8,
+          "font_size": 24,
+          "color": "FFFFFF",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "AlphaGo Zero：自我博弈的突破",
+          "x": 2.5,
+          "y": 3.5,
+          "w": 8,
+          "h": 0.4,
+          "font_size": 20,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "神经网络架构 · PUCT搜索 · 自我增强 · 训练循环",
+          "x": 2.5,
+          "y": 4.0,
+          "w": 9,
+          "h": 0.4,
+          "font_size": 14,
+          "color": "757575",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 1.2,
+          "y": 5.0,
+          "w": 0.8,
+          "h": 0.8,
+          "fill": "00897B"
+        },
+        {
+          "type": "text",
+          "text": "III",
+          "x": 1.2,
+          "y": 5.0,
+          "w": 0.8,
+          "h": 0.8,
+          "font_size": 24,
+          "color": "FFFFFF",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "强化学习基础",
+          "x": 2.5,
+          "y": 5.0,
+          "w": 8,
+          "h": 0.4,
+          "font_size": 20,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "MDP · 价值函数 · 蒙特卡洛方法 · 时序差分学习",
+          "x": 2.5,
+          "y": 5.5,
+          "w": 9,
+          "h": 0.4,
+          "font_size": 14,
+          "color": "757575",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "102A56",
+      "elements": [
+        {
+          "type": "text",
+          "text": "PART I",
+          "x": 1,
+          "y": 1.5,
+          "w": 11.333,
+          "h": 0.8,
+          "font_size": 18,
+          "color": "E8A838",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "蒙特卡洛树搜索",
+          "x": 1,
+          "y": 2.5,
+          "w": 11.333,
+          "h": 1.2,
+          "font_size": 40,
+          "color": "FFFFFF",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "Monte Carlo Tree Search",
+          "x": 1,
+          "y": 3.8,
+          "w": 11.333,
+          "h": 0.8,
+          "font_size": 20,
+          "color": "90A4AE",
+          "bold": false,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 5.167,
+          "y": 5.0,
+          "w": 3,
+          "h": 0.05,
+          "fill": "E8A838"
+        },
+        {
+          "type": "text",
+          "text": "推荐教程：李理的博客 · AlphaZero（图解 MCTS 全过程）",
+          "x": 1,
+          "y": 5.6,
+          "w": 11.333,
+          "h": 0.5,
+          "font_size": 13,
+          "color": "90A4AE",
+          "bold": false,
+          "align": "center",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "Minimax 搜索  最坏情况下最大化收益 (冯·诺依曼)",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/minimax.png",
+          "x": 1.0,
+          "y": 1.2,
+          "w": 11.3,
+          "h": 5.8
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "Alpha-Beta 剪枝  剪掉不影响决策的分支",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/alpha_beta.png",
+          "x": 1.0,
+          "y": 1.2,
+          "w": 11.3,
+          "h": 5.8
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "Heuristic 启发式搜索  优先搜子力优势大的走法",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/heuristic.png",
+          "x": 1.0,
+          "y": 1.2,
+          "w": 11.3,
+          "h": 5.8
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "为什么围棋不能用 Minimax？  分支因子 + 估值函数",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/why_go_fails.png",
+          "x": 1.0,
+          "y": 1.2,
+          "w": 11.3,
+          "h": 5.8
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "为什么围棋这么难？",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/complexity.png",
+          "x": 0.5,
+          "y": 1.2,
+          "w": 12.3,
+          "h": 5.5
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "蒙特卡洛方法：从物理到博弈",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 1.3,
+          "w": 5.8,
+          "h": 4.3,
+          "fill": "E8F5E9"
+        },
+        {
+          "type": "text",
+          "text": "物理中的蒙特卡洛",
+          "x": 0.8,
+          "y": 1.4,
+          "w": 5.2,
+          "h": 0.4,
+          "font_size": 17,
+          "color": "2E7D32",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "• 格点QCD：用MC采样计算路径积分\n\n• Metropolis算法：按 exp(-S) 采样构型\n\n• 重要性采样：用概率分布引导采样\n\n• 核心思想：用随机采样近似复杂积分",
+          "x": 0.8,
+          "y": 2.0,
+          "w": 5.2,
+          "h": 3.4,
+          "font_size": 13,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 7.0,
+          "y": 1.3,
+          "w": 5.8,
+          "h": 4.3,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "博弈中的蒙特卡洛",
+          "x": 7.3,
+          "y": 1.4,
+          "w": 5.2,
+          "h": 0.4,
+          "font_size": 17,
+          "color": "1565C0",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "• 随机模拟对局至终局获得结果\n\n• 统计胜率来评估局面好坏\n\n• 用树结构组织搜索方向\n\n• 核心思想：用随机采样近似博弈值",
+          "x": 7.3,
+          "y": 2.0,
+          "w": 5.2,
+          "h": 3.4,
+          "font_size": 13,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 5.9,
+          "w": 12.3,
+          "h": 0.7,
+          "fill": "FFEBEE"
+        },
+        {
+          "type": "text",
+          "text": "本质相同：用随机采样解决精确计算不可行的问题",
+          "x": 0.5,
+          "y": 5.9,
+          "w": 12.3,
+          "h": 0.7,
+          "font_size": 15,
+          "color": "E53935",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "传统 MCTS 第 1 次模拟  展开 + Rollout + 回传 (井字棋实例)",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/ttt_iter1.png",
+          "x": 1.0,
+          "y": 1.2,
+          "w": 11.3,
+          "h": 5.8
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "传统 MCTS 第 2 次模拟  UCT 选择 → 展开 → 回传",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/ttt_iter2.png",
+          "x": 1.0,
+          "y": 1.2,
+          "w": 11.3,
+          "h": 5.8
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "搜索树的非对称增长  算力集中 = 重要性采样",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/tree_growth.png",
+          "x": 1.0,
+          "y": 1.2,
+          "w": 11.3,
+          "h": 5.8
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "MCTS 的四个阶段",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/mcts_phases.png",
+          "x": 0.5,
+          "y": 1.1,
+          "w": 12.3,
+          "h": 3.8
+        },
+        {
+          "type": "text",
+          "text": "每次迭代执行这四个步骤，逐步积累统计信息，搜索精度随迭代次数增加而提高",
+          "x": 0.5,
+          "y": 5.0,
+          "w": 12.3,
+          "h": 0.4,
+          "font_size": 13,
+          "color": "757575",
+          "bold": false,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 5.6,
+          "w": 2.95,
+          "h": 1.3,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "① 选择 Selection",
+          "x": 0.6,
+          "y": 5.7,
+          "w": 2.75,
+          "h": 0.35,
+          "font_size": 13,
+          "color": "1565C0",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "从根节点沿UCT最大的子节点下行",
+          "x": 0.6,
+          "y": 6.1,
+          "w": 2.75,
+          "h": 0.7,
+          "font_size": 11,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 3.65,
+          "y": 5.6,
+          "w": 2.95,
+          "h": 1.3,
+          "fill": "E8F5E9"
+        },
+        {
+          "type": "text",
+          "text": "② 扩展 Expansion",
+          "x": 3.75,
+          "y": 5.7,
+          "w": 2.75,
+          "h": 0.35,
+          "font_size": 13,
+          "color": "2E7D32",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "到达叶节点后添加一个新子节点",
+          "x": 3.75,
+          "y": 6.1,
+          "w": 2.75,
+          "h": 0.7,
+          "font_size": 11,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 6.8,
+          "y": 5.6,
+          "w": 2.95,
+          "h": 1.3,
+          "fill": "FFF3E0"
+        },
+        {
+          "type": "text",
+          "text": "③ 模拟 Simulation",
+          "x": 6.8999999999999995,
+          "y": 5.7,
+          "w": 2.75,
+          "h": 0.35,
+          "font_size": 13,
+          "color": "E65100",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "从新节点随机走子直到游戏结束",
+          "x": 6.8999999999999995,
+          "y": 6.1,
+          "w": 2.75,
+          "h": 0.7,
+          "font_size": 11,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 9.95,
+          "y": 5.6,
+          "w": 2.95,
+          "h": 1.3,
+          "fill": "FFEBEE"
+        },
+        {
+          "type": "text",
+          "text": "④ 回传 Backpropagation",
+          "x": 10.049999999999999,
+          "y": 5.7,
+          "w": 2.75,
+          "h": 0.35,
+          "font_size": 13,
+          "color": "E53935",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "将结果沿路径回传更新统计量",
+          "x": 10.049999999999999,
+          "y": 6.1,
+          "w": 2.75,
+          "h": 0.7,
+          "font_size": 11,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "① Selection 选择  沿 UCT 最大路径下行至叶节点",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/mcts_1_selection.png",
+          "x": 0.4,
+          "y": 1.2,
+          "w": 6.2,
+          "h": 5.5
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 6.9,
+          "y": 1.2,
+          "w": 6.0,
+          "h": 5.5,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "原理",
+          "x": 7.1,
+          "y": 1.3,
+          "w": 5.6,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "1565C0",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "从根节点出发，对每个子节点计算 PUCT 值，选最大者下行，递归至叶节点。\n\nu = Q(s,a) + c_puct · P(s,a) · √N(s) / (1+N(s,a))\n\n利用-探索平衡：Q 大→历史好；N 小→多探索",
+          "x": 7.1,
+          "y": 1.75,
+          "w": 5.6,
+          "h": 4.8,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "② Expansion 扩展  在叶节点下添加新子节点",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/mcts_2_expansion.png",
+          "x": 0.4,
+          "y": 1.2,
+          "w": 6.2,
+          "h": 5.5
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 6.9,
+          "y": 1.2,
+          "w": 6.0,
+          "h": 5.5,
+          "fill": "E8F5E9"
+        },
+        {
+          "type": "text",
+          "text": "原理",
+          "x": 7.1,
+          "y": 1.3,
+          "w": 5.6,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "2E7D32",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "到达叶节点后，若非终局，添加一个未尝试的合法动作作为新子节点。\n\nAlphaGo Zero 的特点：扩展即评估——首次访问叶节点时立即调用神经网络得到 (P, v)，扩展与模拟合二为一。\n\n对 P 做合法动作掩码后重归一化。",
+          "x": 7.1,
+          "y": 1.75,
+          "w": 5.6,
+          "h": 4.8,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "③ Simulation 模拟  评估新节点价值（关键差异）",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/mcts_3_simulation.png",
+          "x": 0.4,
+          "y": 1.2,
+          "w": 6.2,
+          "h": 5.5
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 6.9,
+          "y": 1.2,
+          "w": 6.0,
+          "h": 5.5,
+          "fill": "FFF3E0"
+        },
+        {
+          "type": "text",
+          "text": "原理",
+          "x": 7.1,
+          "y": 1.3,
+          "w": 5.6,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "E65100",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "传统：从新节点随机 rollout 到终局，得 z=±1。质量差、计算量大（需上千次模拟）。\n\nAlphaGo Zero：不做 rollout。叶节点处直接用网络 v = fθ(s)，一次前向传播得到价值估计。\n\n→ 论文标题 \"without rollouts\" 的由来。25 次模拟即可下出好棋。",
+          "x": 7.1,
+          "y": 1.75,
+          "w": 5.6,
+          "h": 4.8,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "④ Backpropagation 回传  沿路径更新 N 与 Q",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/mcts_4_backprop.png",
+          "x": 0.4,
+          "y": 1.2,
+          "w": 6.2,
+          "h": 5.5
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 6.9,
+          "y": 1.2,
+          "w": 6.0,
+          "h": 5.5,
+          "fill": "FFEBEE"
+        },
+        {
+          "type": "text",
+          "text": "原理",
+          "x": 7.1,
+          "y": 1.3,
+          "w": 5.6,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "E53935",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "沿选择路径回传，更新每条边的 N(s,a) 与 Q(s,a)：\n\nQ ← (N·Q + v) / (N+1),  N ← N+1\n\n关键 1：W/N = Q —— 累计价值除以访问次数即平均价值。\n关键 2：return -v —— 每上一层取负。W 相对于当前走棋玩家，这是 minimax 的体现。\n\n增量平均 O(1) 空间。本质是 TD 思想。",
+          "x": 7.1,
+          "y": 1.75,
+          "w": 5.6,
+          "h": 4.8,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "MCTS 的演进  Rollout → 策略网络 → 价值网络 → 单网络",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/ttt_evolution.png",
+          "x": 0.5,
+          "y": 1.1,
+          "w": 12.3,
+          "h": 4.0
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 5.3,
+          "w": 2.95,
+          "h": 1.6,
+          "fill": "FFF3E0"
+        },
+        {
+          "type": "text",
+          "text": "(a) 传统 MCTS",
+          "x": 0.6,
+          "y": 5.4,
+          "w": 2.75,
+          "h": 0.35,
+          "font_size": 12,
+          "color": "E65100",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "随机 rollout 到终局\n质量差、上千次模拟\nU ∝ √(ln Np / ni)",
+          "x": 0.6,
+          "y": 5.8,
+          "w": 2.75,
+          "h": 1.0,
+          "font_size": 10,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 3.65,
+          "y": 5.3,
+          "w": 2.95,
+          "h": 1.6,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "(b) + 策略网络",
+          "x": 3.75,
+          "y": 5.4,
+          "w": 2.75,
+          "h": 0.35,
+          "font_size": 12,
+          "color": "1565C0",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "P(s,a) 引导搜索方向\n好走法优先探索\n仍保留 rollout",
+          "x": 3.75,
+          "y": 5.8,
+          "w": 2.75,
+          "h": 1.0,
+          "font_size": 10,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 6.8,
+          "y": 5.3,
+          "w": 2.95,
+          "h": 1.6,
+          "fill": "E8F5E9"
+        },
+        {
+          "type": "text",
+          "text": "(c) + 价值网络",
+          "x": 6.8999999999999995,
+          "y": 5.4,
+          "w": 2.75,
+          "h": 0.35,
+          "font_size": 12,
+          "color": "2E7D32",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "v(s) 替代 rollout\n一次前向传播得价值\n\"without rollouts\"",
+          "x": 6.8999999999999995,
+          "y": 5.8,
+          "w": 2.75,
+          "h": 1.0,
+          "font_size": 10,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 9.95,
+          "y": 5.3,
+          "w": 2.95,
+          "h": 1.6,
+          "fill": "FFEBEE"
+        },
+        {
+          "type": "text",
+          "text": "(d) AlphaZero",
+          "x": 10.049999999999999,
+          "y": 5.4,
+          "w": 2.75,
+          "h": 0.35,
+          "font_size": 12,
+          "color": "E53935",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "单网络 f(s)→(p,v)\n策略+价值共享特征\n通吃棋类",
+          "x": 10.049999999999999,
+          "y": 5.8,
+          "w": 2.75,
+          "h": 1.0,
+          "font_size": 10,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "设计思考 ①：为什么要下行到叶子？  只决策一层吗？",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/why_leaf.png",
+          "x": 1.0,
+          "y": 1.2,
+          "w": 11.3,
+          "h": 5.8
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "设计思考 ②：模拟的复杂度  \"只运行一次网络\"是什么意思？",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/complexity_compare.png",
+          "x": 1.0,
+          "y": 1.2,
+          "w": 11.3,
+          "h": 5.8
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "设计思考 ③：MCTS 在系统中的角色  策略改进算子",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/policy_operator.png",
+          "x": 1.0,
+          "y": 1.2,
+          "w": 11.3,
+          "h": 5.8
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "Selection: UCT 公式",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "Upper Confidence Bound applied to Trees",
+          "x": 0.5,
+          "y": 1.0,
+          "w": 12,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "757575",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 1.5,
+          "y": 1.5,
+          "w": 10.3,
+          "h": 1.0,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "UCT(i) = wᵢ/nᵢ + c · √( ln N / nᵢ )",
+          "x": 1.5,
+          "y": 1.5,
+          "w": 10.3,
+          "h": 1.0,
+          "font_size": 22,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 2.8,
+          "w": 3.8,
+          "h": 1.8,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "利用项 (Exploitation)",
+          "x": 0.65,
+          "y": 2.88,
+          "w": 3.5,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "1565C0",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "wᵢ/nᵢ = 第 i 个子节点的平均胜率，偏好好的走法",
+          "x": 0.65,
+          "y": 3.25,
+          "w": 3.5,
+          "h": 1.25,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 4.75,
+          "y": 2.8,
+          "w": 3.8,
+          "h": 1.8,
+          "fill": "FFF3E0"
+        },
+        {
+          "type": "text",
+          "text": "探索项 (Exploration)",
+          "x": 4.9,
+          "y": 2.88,
+          "w": 3.5,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "E65100",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "√(ln N / nᵢ)：访问少的节点获得更高的探索奖励",
+          "x": 4.9,
+          "y": 3.25,
+          "w": 3.5,
+          "h": 1.25,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 9.0,
+          "y": 2.8,
+          "w": 3.8,
+          "h": 1.8,
+          "fill": "F3E5F5"
+        },
+        {
+          "type": "text",
+          "text": "探索常数 c",
+          "x": 9.15,
+          "y": 2.88,
+          "w": 3.5,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "7B1FA2",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "控制利用与探索的平衡，常用 c = √2",
+          "x": 9.15,
+          "y": 3.25,
+          "w": 3.5,
+          "h": 1.25,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0.5,
+          "y": 4.9,
+          "w": 12.3,
+          "h": 0.02,
+          "fill": "E0E0E0"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 5.1,
+          "w": 12.3,
+          "h": 0.7,
+          "fill": "FFEBEE"
+        },
+        {
+          "type": "text",
+          "text": "核心性质：UCT 在无限采样下收敛到极小极大最优解 (Kocsis & Szepesvári, 2006)",
+          "x": 0.5,
+          "y": 5.1,
+          "w": 12.3,
+          "h": 0.7,
+          "font_size": 14,
+          "color": "E53935",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 6.0,
+          "w": 12.3,
+          "h": 0.7,
+          "fill": "E8F5E9"
+        },
+        {
+          "type": "text",
+          "text": "类比物理：类似模拟退火中温度控制探索-利用平衡，或 Metropolis 中接受概率的作用",
+          "x": 0.5,
+          "y": 6.0,
+          "w": 12.3,
+          "h": 0.7,
+          "font_size": 14,
+          "color": "00897B",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "1565C0"
+        },
+        {
+          "type": "text",
+          "text": "MCTS 的关键性质",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 1.3,
+          "w": 5.9,
+          "h": 2.4,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "渐近最优 (Asymptotic Optimality)",
+          "x": 0.7,
+          "y": 1.45,
+          "w": 5.5,
+          "h": 0.4,
+          "font_size": 15,
+          "color": "1565C0",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "随着模拟次数 N→∞，MCTS 的选择概率收敛到最优策略。这是 UCT 的理论保证。",
+          "x": 0.7,
+          "y": 1.9500000000000002,
+          "w": 5.5,
+          "h": 1.6,
+          "font_size": 13,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 6.9,
+          "y": 1.3,
+          "w": 5.9,
+          "h": 2.4,
+          "fill": "E8F5E9"
+        },
+        {
+          "type": "text",
+          "text": "Anytime 算法",
+          "x": 7.1000000000000005,
+          "y": 1.45,
+          "w": 5.5,
+          "h": 0.4,
+          "font_size": 15,
+          "color": "2E7D32",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "可以随时中断并返回当前最优动作。计算资源越多，决策质量越高。天然适合有时间限制的实时决策。",
+          "x": 7.1000000000000005,
+          "y": 1.9500000000000002,
+          "w": 5.5,
+          "h": 1.6,
+          "font_size": 13,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 4.0,
+          "w": 5.9,
+          "h": 2.4,
+          "fill": "FFF3E0"
+        },
+        {
+          "type": "text",
+          "text": "无需领域知识",
+          "x": 0.7,
+          "y": 4.15,
+          "w": 5.5,
+          "h": 0.4,
+          "font_size": 15,
+          "color": "E65100",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "不需要人工设计评估函数。仅需知道游戏规则（合法动作和终止条件），即可通过模拟获取价值信息。",
+          "x": 0.7,
+          "y": 4.65,
+          "w": 5.5,
+          "h": 1.6,
+          "font_size": 13,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 6.9,
+          "y": 4.0,
+          "w": 5.9,
+          "h": 2.4,
+          "fill": "F3E5F5"
+        },
+        {
+          "type": "text",
+          "text": "自适应搜索",
+          "x": 7.1000000000000005,
+          "y": 4.15,
+          "w": 5.5,
+          "h": 0.4,
+          "font_size": 15,
+          "color": "7B1FA2",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "自动将更多计算资源分配给最有前途的分支。搜索树非对称增长，类似重要性采样。",
+          "x": 7.1000000000000005,
+          "y": 4.65,
+          "w": 5.5,
+          "h": 1.6,
+          "font_size": 13,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "102A56",
+      "elements": [
+        {
+          "type": "text",
+          "text": "PART II",
+          "x": 1,
+          "y": 1.5,
+          "w": 11.333,
+          "h": 0.8,
+          "font_size": 18,
+          "color": "E8A838",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "AlphaGo Zero",
+          "x": 1,
+          "y": 2.5,
+          "w": 11.333,
+          "h": 1.2,
+          "font_size": 40,
+          "color": "FFFFFF",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "自我博弈的突破 · Mastering the Game of Go without Human Knowledge",
+          "x": 1,
+          "y": 3.8,
+          "w": 11.333,
+          "h": 0.8,
+          "font_size": 16,
+          "color": "90A4AE",
+          "bold": false,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 5.167,
+          "y": 5.0,
+          "w": 3,
+          "h": 0.05,
+          "fill": "E8A838"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "E53935"
+        },
+        {
+          "type": "text",
+          "text": "从 AlphaGo 到 AlphaGo Zero",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/evolution.png",
+          "x": 0.5,
+          "y": 1.1,
+          "w": 12.3,
+          "h": 4.3
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 5.6,
+          "w": 12.3,
+          "h": 1.3,
+          "fill": "FFEBEE"
+        },
+        {
+          "type": "text",
+          "text": "AlphaGo Zero 的三大简化",
+          "x": 0.8,
+          "y": 5.7,
+          "w": 11.7,
+          "h": 0.4,
+          "font_size": 15,
+          "color": "E53935",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "① 不使用任何人类棋谱 (no human data)    ② 仅用棋盘状态作为输入 (no hand-crafted features)    ③ 单一神经网络替代策略网络+价值网络",
+          "x": 0.8,
+          "y": 6.15,
+          "w": 11.7,
+          "h": 0.6,
+          "font_size": 13,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "E53935"
+        },
+        {
+          "type": "text",
+          "text": "双头神经网络架构  (OthelloNNet.py)",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/nn_arch.png",
+          "x": 1.5,
+          "y": 1.0,
+          "w": 10.3,
+          "h": 6.2
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "E53935"
+        },
+        {
+          "type": "text",
+          "text": "MCTS + 神经网络：PUCT 搜索  (MCTS.py:112-115)",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/puct.png",
+          "x": 0.5,
+          "y": 1.0,
+          "w": 12.3,
+          "h": 4.3
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 5.5,
+          "w": 12.3,
+          "h": 1.5,
+          "fill": "F0F4F8"
+        },
+        {
+          "type": "text",
+          "text": "与传统 MCTS 的关键区别",
+          "x": 0.8,
+          "y": 5.6,
+          "w": 11.7,
+          "h": 0.4,
+          "font_size": 15,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "① 用 P(s,a) 替代随机模拟 (Simulation)    ② 用 v(s) 替代终局结果    ③ 搜索效率大幅提升，少量模拟即可获得高质量策略",
+          "x": 0.8,
+          "y": 6.1,
+          "w": 11.7,
+          "h": 0.7,
+          "font_size": 13,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "E53935"
+        },
+        {
+          "type": "text",
+          "text": "自我对弈与数据生成  MCTS → 落子策略 π → 训练数据 (s, π, z)",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/self_play_loop.png",
+          "x": 0.3,
+          "y": 1.1,
+          "w": 6.0,
+          "h": 5.5
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 6.6,
+          "y": 1.1,
+          "w": 6.4,
+          "h": 2.6,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "从搜索到落子：温度采样",
+          "x": 6.8,
+          "y": 1.2,
+          "w": 6.0,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "1565C0",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "MCTS 跑完 N 次模拟后，根节点访问次数 N(s,a) 如何变成落子策略？\n\nπᵢ = N(s,aᵢ)^(1/τ)\n\n对弈 τ→0：选 N 最大的（确定性、最强）\n自对弈前期 τ=1：按比例随机采样（探索、防模式坍塌）\n教学版 tempThreshold=15：前 15 步探索，之后利用",
+          "x": 6.8,
+          "y": 1.6,
+          "w": 6.0,
+          "h": 2.0,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 6.6,
+          "y": 3.9,
+          "w": 6.4,
+          "h": 2.7,
+          "fill": "FFF3E0"
+        },
+        {
+          "type": "text",
+          "text": "训练数据 (s, π, z)",
+          "x": 6.8,
+          "y": 4.0,
+          "w": 6.0,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "E65100",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "每步记录：\n• s：棋盘状态\n• π：MCTS 访问次数分布（温度采样后）\n• z：终局胜负 (±1)\n\n一局自对弈 → 一条轨迹 → 多个 (s,π,z)\n网络学：p → π（策略蒸馏），v → z（价值评估）",
+          "x": 6.8,
+          "y": 4.4,
+          "w": 6.0,
+          "h": 2.1,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "E53935"
+        },
+        {
+          "type": "text",
+          "text": "代码参数对照表  (alpha-zero-general 默认配置)",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/param_table.png",
+          "x": 0.5,
+          "y": 1.1,
+          "w": 12.3,
+          "h": 5.8
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "E53935"
+        },
+        {
+          "type": "text",
+          "text": "复现算力对比  论文 vs 教学版",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/compute_compare.png",
+          "x": 0.5,
+          "y": 1.1,
+          "w": 12.3,
+          "h": 5.8
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "E53935"
+        },
+        {
+          "type": "text",
+          "text": "论文参数量级对照  Lee / AGZ / AZ · 参数量级 aware",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/paper_params.png",
+          "x": 0.5,
+          "y": 1.1,
+          "w": 12.3,
+          "h": 5.8
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "E53935"
+        },
+        {
+          "type": "text",
+          "text": "训练目标：损失函数  (NNet.py:96-100)",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 1.5,
+          "y": 1.3,
+          "w": 10.3,
+          "h": 0.9,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "ℓ = (z - v)²  −  πᵀ log p",
+          "x": 1.5,
+          "y": 1.3,
+          "w": 10.3,
+          "h": 0.9,
+          "font_size": 22,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "注：论文含 c‖θ‖² 正则项，教学实现省略（靠 BN + Dropout 防过拟合）",
+          "x": 0.5,
+          "y": 2.3,
+          "w": 12.3,
+          "h": 0.35,
+          "font_size": 12,
+          "color": "757575",
+          "bold": false,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 2.8,
+          "w": 5.9,
+          "h": 2.2,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "价值损失 (z-v)²",
+          "x": 0.65,
+          "y": 2.88,
+          "w": 5.6000000000000005,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "1565C0",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "z: 自我对弈终局结果 (±1)\nv: 网络预测的价值 (tanh)\n\nloss_v = sum((target-output)²)/N\n让网络学会准确评估局面",
+          "x": 0.65,
+          "y": 3.25,
+          "w": 5.6000000000000005,
+          "h": 1.6500000000000001,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 6.9,
+          "y": 2.8,
+          "w": 5.9,
+          "h": 2.2,
+          "fill": "FFF3E0"
+        },
+        {
+          "type": "text",
+          "text": "策略损失 −πᵀ log p",
+          "x": 7.050000000000001,
+          "y": 2.88,
+          "w": 5.6000000000000005,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "E65100",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "π: MCTS 访问次数分布\np: 网络输出 log_softmax\n\nloss_pi = -sum(π·logp)/N\n本质是交叉熵 / 知识蒸馏",
+          "x": 7.050000000000001,
+          "y": 3.25,
+          "w": 5.6000000000000005,
+          "h": 1.6500000000000001,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 5.3,
+          "w": 12.3,
+          "h": 1.6,
+          "fill": "0D1B3E"
+        },
+        {
+          "type": "text",
+          "text": "策略提升的闭环 (Coach.py)",
+          "x": 0.8,
+          "y": 5.4,
+          "w": 11.7,
+          "h": 0.4,
+          "font_size": 15,
+          "color": "E8A838",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "MCTS搜索 → 得到改进策略π → 训练网络逼近π → 网络指导MCTS → 更强的搜索 → ...",
+          "x": 0.8,
+          "y": 5.85,
+          "w": 11.7,
+          "h": 0.4,
+          "font_size": 13,
+          "color": "FFFFFF",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "类比物理中的自洽场方法 (SCF)：每轮迭代都以前一轮结果为基础，逐步逼近最优解",
+          "x": 0.8,
+          "y": 6.35,
+          "w": 11.7,
+          "h": 0.4,
+          "font_size": 12,
+          "color": "00897B",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "E53935"
+        },
+        {
+          "type": "text",
+          "text": "完整训练流程  (Coach.py: learn)",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/training_pipeline.png",
+          "x": 0.3,
+          "y": 1.1,
+          "w": 12.7,
+          "h": 4.3
+        },
+        {
+          "type": "text",
+          "text": "教学版：1 块 K80 GPU，~3 天，80 迭代收敛  |  AGZ：评估 4 TPU，1600 模拟/步，3 天 490 万局",
+          "x": 0.5,
+          "y": 5.6,
+          "w": 12.3,
+          "h": 0.4,
+          "font_size": 13,
+          "color": "757575",
+          "bold": false,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 6.1,
+          "w": 12.3,
+          "h": 0.7,
+          "fill": "E8F5E9"
+        },
+        {
+          "type": "text",
+          "text": "并行计算架构：自我对弈各 worker 独立，天然适合大规模并行加速（HPC 场景）",
+          "x": 0.5,
+          "y": 6.1,
+          "w": 12.3,
+          "h": 0.7,
+          "font_size": 14,
+          "color": "00897B",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "E53935"
+        },
+        {
+          "type": "text",
+          "text": "训练效果",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/elo_progress.png",
+          "x": 0.5,
+          "y": 1.0,
+          "w": 12.3,
+          "h": 5.8
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "E53935"
+        },
+        {
+          "type": "text",
+          "text": "KataGo 强度 vs MCTS 搜索量  (对数线性标度律)",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/katago_elo_vs_visits.png",
+          "x": 0.5,
+          "y": 1.0,
+          "w": 12.3,
+          "h": 5.3
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 6.4,
+          "w": 12.3,
+          "h": 0.7,
+          "fill": "E8F5E9"
+        },
+        {
+          "type": "text",
+          "text": "Elo ≈ Elo₀ + k·log₁₀(visits)  |  每搜索量 ×10 ≈ +350–490 Elo  |  1 visit ≈ 业余 6–8 段",
+          "x": 0.5,
+          "y": 6.4,
+          "w": 12.3,
+          "h": 0.7,
+          "font_size": 13,
+          "color": "00897B",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "E53935"
+        },
+        {
+          "type": "text",
+          "text": "KataGo 核心算法优化：超越 AlphaZero 的秘诀",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.6,
+          "font_size": 24,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "相比于 AlphaGo Zero，KataGo (Wu 2019) 引入了多项关键改良，将训练效率提升了 50~100 倍",
+          "x": 0.5,
+          "y": 0.85,
+          "w": 12.3,
+          "h": 0.35,
+          "font_size": 12,
+          "color": "757575",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 1.4,
+          "w": 5.9,
+          "h": 2.1,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "1. 多任务辅助训练",
+          "x": 0.7,
+          "y": 1.5,
+          "w": 5.5,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "1565C0",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "• 目数预测 (Score Lead)\n• 子力归属预测 (Ownership)\n• 对手下一步预测\n• 效果：极快缩短摸索期",
+          "x": 0.7,
+          "y": 1.9,
+          "w": 5.5,
+          "h": 1.5,
+          "font_size": 11,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 6.9,
+          "y": 1.4,
+          "w": 5.9,
+          "h": 2.1,
+          "fill": "E8F5E9"
+        },
+        {
+          "type": "text",
+          "text": "2. 变化算力自弈",
+          "x": 7.1000000000000005,
+          "y": 1.5,
+          "w": 5.5,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "2E7D32",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "• 90% 常规步用极低模拟量\n• 10% 关键点用完整模拟\n• 效果：自弈数据生成效率提升数倍",
+          "x": 7.1000000000000005,
+          "y": 1.9,
+          "w": 5.5,
+          "h": 1.5,
+          "font_size": 11,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 3.6999999999999997,
+          "w": 5.9,
+          "h": 2.1,
+          "fill": "FFF3E0"
+        },
+        {
+          "type": "text",
+          "text": "3. 全局感知 SE 模块",
+          "x": 0.7,
+          "y": 3.8,
+          "w": 5.5,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "E65100",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "• 全局通道特征提取\n• 打破 CNN 长距离传导局限\n• 效果：提升死活和全局厚势直觉",
+          "x": 0.7,
+          "y": 4.199999999999999,
+          "w": 5.5,
+          "h": 1.5,
+          "font_size": 11,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 6.9,
+          "y": 3.6999999999999997,
+          "w": 5.9,
+          "h": 2.1,
+          "fill": "F3E5F5"
+        },
+        {
+          "type": "text",
+          "text": "4. 胜率-目数混合效用",
+          "x": 7.1000000000000005,
+          "y": 3.8,
+          "w": 5.5,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "7B1FA2",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "• 克服 AlphaZero 只看胜率弊端\n• 追求目数优势最大化\n• 效果：让子棋和逆风局表现极强",
+          "x": 7.1000000000000005,
+          "y": 4.199999999999999,
+          "w": 5.5,
+          "h": 1.5,
+          "font_size": 11,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 6.1,
+          "w": 12.3,
+          "h": 1.0,
+          "fill": "0D1B3E"
+        },
+        {
+          "type": "text",
+          "text": "规则兼容与工程大众化革新",
+          "x": 0.8,
+          "y": 6.15,
+          "w": 11.7,
+          "h": 0.35,
+          "font_size": 13,
+          "color": "E8A838",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "直接将贴目 (Komi) 和规则信息作为特征输入，支持单模型全规则兼容；引入 OpenCL/Vulkan/TensorRT，使普通家用显卡也能高效运行和训练超人类强度的围棋 AI。",
+          "x": 0.8,
+          "y": 6.5,
+          "w": 11.7,
+          "h": 0.5,
+          "font_size": 11,
+          "color": "CFD8DC",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "102A56",
+      "elements": [
+        {
+          "type": "text",
+          "text": "PART III",
+          "x": 1,
+          "y": 1.5,
+          "w": 11.333,
+          "h": 0.8,
+          "font_size": 18,
+          "color": "E8A838",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "强化学习基础",
+          "x": 1,
+          "y": 2.5,
+          "w": 11.333,
+          "h": 1.2,
+          "font_size": 40,
+          "color": "FFFFFF",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "Reinforcement Learning Foundations",
+          "x": 1,
+          "y": 3.8,
+          "w": 11.333,
+          "h": 0.8,
+          "font_size": 20,
+          "color": "90A4AE",
+          "bold": false,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 5.167,
+          "y": 5.0,
+          "w": 3,
+          "h": 0.05,
+          "fill": "E8A838"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "00897B"
+        },
+        {
+          "type": "text",
+          "text": "马尔可夫决策过程 (MDP)",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/mdp.png",
+          "x": 0.5,
+          "y": 1.1,
+          "w": 12.3,
+          "h": 4.0
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 5.3,
+          "w": 12.3,
+          "h": 0.7,
+          "fill": "FFEBEE"
+        },
+        {
+          "type": "text",
+          "text": "围棋天然是一个 MDP：状态 = 棋盘局面，动作 = 落子位置，奖励 = 终局胜负 (±1)",
+          "x": 0.5,
+          "y": 5.3,
+          "w": 12.3,
+          "h": 0.7,
+          "font_size": 14,
+          "color": "E53935",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "RL 的目标：学习最优策略 π* 使得累积奖励最大",
+          "x": 0.5,
+          "y": 6.2,
+          "w": 12.3,
+          "h": 0.4,
+          "font_size": 14,
+          "color": "757575",
+          "bold": false,
+          "align": "center",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "00897B"
+        },
+        {
+          "type": "text",
+          "text": "价值函数与策略",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 1.2,
+          "w": 5.9,
+          "h": 2.4,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "策略 π(a|s)",
+          "x": 0.8,
+          "y": 1.3,
+          "w": 5.3,
+          "h": 0.4,
+          "font_size": 16,
+          "color": "1565C0",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "在状态 s 下选择动作 a 的概率分布\n\n策略是 agent 的\"行为准则\"\n\n目标：找到最优策略 π*",
+          "x": 0.8,
+          "y": 1.8,
+          "w": 5.3,
+          "h": 1.6,
+          "font_size": 13,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 7.0,
+          "y": 1.2,
+          "w": 5.9,
+          "h": 2.4,
+          "fill": "E8F5E9"
+        },
+        {
+          "type": "text",
+          "text": "状态价值函数 V(s)",
+          "x": 7.3,
+          "y": 1.3,
+          "w": 5.3,
+          "h": 0.4,
+          "font_size": 16,
+          "color": "2E7D32",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "从状态 s 出发，遵循策略 π 的期望累积回报\n\nV^π(s) = E_π[Gₜ | Sₜ = s]\nGₜ = Rₜ₊₁ + γRₜ₊₂ + γ²Rₜ₊₃ + ...",
+          "x": 7.3,
+          "y": 1.8,
+          "w": 5.3,
+          "h": 1.6,
+          "font_size": 13,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 3.9,
+          "w": 12.4,
+          "h": 2.2,
+          "fill": "FFF3E0"
+        },
+        {
+          "type": "text",
+          "text": "动作价值函数 Q(s, a)",
+          "x": 0.8,
+          "y": 4.0,
+          "w": 5.3,
+          "h": 0.4,
+          "font_size": 16,
+          "color": "E65100",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "在状态 s 执行动作 a 后，遵循策略 π 的期望累积回报：  Q^π(s,a) = E_π[Gₜ | Sₜ = s, Aₜ = a]\n\n在 AlphaGo 中: Q(s,a) 就是 MCTS 节点统计的平均回报，用来指导选择最优走法",
+          "x": 0.8,
+          "y": 4.5,
+          "w": 11.8,
+          "h": 1.4,
+          "font_size": 13,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "00897B"
+        },
+        {
+          "type": "text",
+          "text": "蒙特卡洛方法 vs 时序差分学习",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "image",
+          "path": "/Users/guoshaoyang/Desktop/workdir/AlphaZeroIntro/assets/td_vs_mc.png",
+          "x": 0.2,
+          "y": 1.1,
+          "w": 12.9,
+          "h": 3.5
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 4.8,
+          "w": 6.0,
+          "h": 1.9,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "MC 更新：等到终局",
+          "x": 0.8,
+          "y": 4.9,
+          "w": 5.4,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "1565C0",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "V(Sₜ) ← V(Sₜ) + α[Gₜ - V(Sₜ)]\n\n无偏但高方差，必须完成完整轨迹",
+          "x": 0.8,
+          "y": 5.3,
+          "w": 5.4,
+          "h": 1.3,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 6.9,
+          "y": 4.8,
+          "w": 6.0,
+          "h": 1.9,
+          "fill": "FFEBEE"
+        },
+        {
+          "type": "text",
+          "text": "TD(0) 更新：每步即学",
+          "x": 7.2,
+          "y": 4.9,
+          "w": 5.4,
+          "h": 0.35,
+          "font_size": 14,
+          "color": "E53935",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "V(Sₜ) ← V(Sₜ) + α[Rₜ₊₁ + γV(Sₜ₊₁) - V(Sₜ)]\n\n有偏但低方差，用估计值 bootstrap",
+          "x": 7.2,
+          "y": 5.3,
+          "w": 5.4,
+          "h": 1.3,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "00897B"
+        },
+        {
+          "type": "text",
+          "text": "TD(λ)：MC 与 TD 的统一框架",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 1,
+          "y": 1.2,
+          "w": 11.3,
+          "h": 0.6,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "TD(0)  λ=0                              TD(λ)  λ=0.5                              MC  λ=1",
+          "x": 1,
+          "y": 1.2,
+          "w": 11.3,
+          "h": 0.6,
+          "font_size": 13,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "n-step 回报",
+          "x": 0.5,
+          "y": 2.1,
+          "w": 12,
+          "h": 0.4,
+          "font_size": 18,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "1-step:  G⁽¹⁾ = Rₜ₊₁ + γV(Sₜ₊₁)                          ← TD(0)\n\n2-step:  G⁽²⁾ = Rₜ₊₁ + γRₜ₊₂ + γ²V(Sₜ₊₂)\n\nn-step:  G⁽ⁿ⁾ = Rₜ₊₁ + γRₜ₊₂ + ... + γⁿV(Sₜ₊ₙ)\n\n∞-step:  G⁽∞⁾ = Rₜ₊₁ + γRₜ₊₂ + ...                       ← MC",
+          "x": 0.8,
+          "y": 2.6,
+          "w": 11.5,
+          "h": 2.4,
+          "font_size": 14,
+          "color": "333333",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 5.3,
+          "w": 12.3,
+          "h": 1.2,
+          "fill": "F3E5F5"
+        },
+        {
+          "type": "text",
+          "text": "Gₜ^λ = (1-λ) Σₙ₌₁^∞ λⁿ⁻¹ G⁽ⁿ⁾,   λ ∈ [0,1] 控制看多远",
+          "x": 0.5,
+          "y": 5.3,
+          "w": 12.3,
+          "h": 1.2,
+          "font_size": 16,
+          "color": "7B1FA2",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "FFFFFF",
+      "elements": [
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 0,
+          "y": 0,
+          "w": 13.333,
+          "h": 0.08,
+          "fill": "0D1B3E"
+        },
+        {
+          "type": "text",
+          "text": "总结",
+          "x": 0.5,
+          "y": 0.25,
+          "w": 12.3,
+          "h": 0.65,
+          "font_size": 26,
+          "color": "0D1B3E",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 1.3,
+          "w": 4.0,
+          "h": 2.6,
+          "fill": "E3F2FD"
+        },
+        {
+          "type": "text",
+          "text": "MCTS",
+          "x": 0.5,
+          "y": 1.4,
+          "w": 4.0,
+          "h": 0.4,
+          "font_size": 18,
+          "color": "1565C0",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "通过蒙特卡洛模拟在博弈树中进行高效的选择性搜索\n\nUCT 平衡利用与探索\n无需评估函数",
+          "x": 0.7,
+          "y": 1.9,
+          "w": 3.6,
+          "h": 1.9,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 4.75,
+          "y": 1.3,
+          "w": 4.0,
+          "h": 2.6,
+          "fill": "E8F5E9"
+        },
+        {
+          "type": "text",
+          "text": "RL 基础",
+          "x": 4.75,
+          "y": 1.4,
+          "w": 4.0,
+          "h": 0.4,
+          "font_size": 18,
+          "color": "2E7D32",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "TD 学习：每步更新\n结合估计与真实回报\n\n从 MC 到 TD 的统一框架 TD(λ)",
+          "x": 4.95,
+          "y": 1.9,
+          "w": 3.6,
+          "h": 1.9,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 9.0,
+          "y": 1.3,
+          "w": 4.0,
+          "h": 2.6,
+          "fill": "FFEBEE"
+        },
+        {
+          "type": "text",
+          "text": "AlphaGo Zero",
+          "x": 9.0,
+          "y": 1.4,
+          "w": 4.0,
+          "h": 0.4,
+          "font_size": 18,
+          "color": "E53935",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "神经网络替代模拟\nMCTS 提供策略改进\n自我对弈生成数据\n\n从零开始超越人类",
+          "x": 9.2,
+          "y": 1.9,
+          "w": 3.6,
+          "h": 1.9,
+          "font_size": 12,
+          "color": "333333",
+          "bold": false,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rounded_rectangle",
+          "x": 0.5,
+          "y": 4.2,
+          "w": 12.3,
+          "h": 2.6,
+          "fill": "0D1B3E"
+        },
+        {
+          "type": "text",
+          "text": "核心洞察",
+          "x": 0.8,
+          "y": 4.3,
+          "w": 11.7,
+          "h": 0.4,
+          "font_size": 18,
+          "color": "E8A838",
+          "bold": true,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "搜索 (MCTS) + 评估 (Neural Network) + 学习 (Self-Play RL) = 从零开始的超人智能",
+          "x": 0.8,
+          "y": 4.8,
+          "w": 11.7,
+          "h": 0.5,
+          "font_size": 15,
+          "color": "FFFFFF",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "text",
+          "text": "类比物理：就像变分蒙特卡洛 (VMC) —— 用参数化的试探波函数 (神经网络) 引导蒙特卡洛采样 (MCTS)，然后通过优化变分参数 (训练) 来逼近基态 (最优策略)",
+          "x": 0.8,
+          "y": 5.5,
+          "w": 11.7,
+          "h": 1.0,
+          "font_size": 13,
+          "color": "00897B",
+          "bold": false,
+          "align": "left",
+          "font": "PingFang SC"
+        }
+      ]
+    },
+    {
+      "background": "0D1B3E",
+      "elements": [
+        {
+          "type": "text",
+          "text": "谢谢！",
+          "x": 1,
+          "y": 2.5,
+          "w": 11.333,
+          "h": 1.2,
+          "font_size": 44,
+          "color": "FFFFFF",
+          "bold": true,
+          "align": "center",
+          "font": "PingFang SC"
+        },
+        {
+          "type": "shape",
+          "shape": "rectangle",
+          "x": 5.167,
+          "y": 4.0,
+          "w": 3,
+          "h": 0.05,
+          "fill": "E8A838"
+        }
+      ]
+    }
+  ]
+}

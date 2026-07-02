@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlphaGo Zero 原理介绍</title>
+
+<!-- KaTeX for math -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+
+<style>
+/* ── Theme ───────────────────────────────────────────────────────── */
+:root{
+  --navy:#0D1B3E;
+  --navy-deep:#0A1128;
+  --section:#102A56;
+  --blue:#1565C0;
+  --light-blue:#E3F2FD;
+  --teal:#00897B;
+  --green:#2E7D32;
+  --light-green:#E8F5E9;
+  --gold:#E8A838;
+  --light-orange:#FFF3E0;
+  --orange:#E65100;
+  --red:#E53935;
+  --light-red:#FFEBEE;
+  --purple:#7B1FA2;
+  --light-purple:#F3E5F5;
+  --gray:#757575;
+  --light-gray:#E0E0E0;
+  --bg:#F0F4F8;
+  --dark-text:#1A1A2E;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+html,body{
+  width:100%;height:100%;overflow:hidden;
+  font-family:"PingFang SC","Noto Sans CJK SC","Helvetica Neue",Arial,sans-serif;
+  background:#000;color:var(--dark-text);
+}
+
+/* ── Slide container ─────────────────────────────────────────────── */
+.deck{width:100vw;height:100vh;position:relative;}
+
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  width:1280px;height:720px;
+  margin:auto;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(var(--scale,1));
+  transform-origin:center center;
+  box-shadow:0 10px 60px rgba(0,0,0,.5);
+  overflow:hidden;
+  opacity:0;pointer-events:none;
+  transition:opacity .25s ease;
+}
+.slide.active{opacity:1;pointer-events:auto;}
+
+.slide.dark{background:var(--navy);color:#fff;}
+.slide.section{background:var(--section);color:#fff;}
+.slide.light{background:#fff;color:var(--dark-text);}
+
+/* ── Top accent bar ──────────────────────────────────────────────── */
+.accent-bar{height:6px;width:100%;}
+.accent-bar.blue{background:var(--blue);}
+.accent-bar.teal{background:var(--teal);}
+.accent-bar.red{background:var(--red);}
+.accent-bar.navy{background:var(--navy);}
+
+/* ── Slide header ────────────────────────────────────────────────── */
+.slide-header{
+  padding:22px 40px 10px;
+}
+.slide-title{
+  font-size:30px;font-weight:700;color:var(--navy);
+  letter-spacing:.5px;
+}
+.slide-subtitle{
+  font-size:14px;color:var(--gray);margin-top:4px;
+}
+
+.slide-body{
+  flex:1;padding:10px 40px 30px;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+
+/* ── Cover slide ─────────────────────────────────────────────────── */
+.cover{
+  background:linear-gradient(135deg,var(--navy) 0%,var(--navy-deep) 100%);
+  color:#fff;text-align:center;
+}
+.cover-stripe{
+  position:absolute;bottom:0;left:0;right:0;height:120px;
+  background:var(--navy-deep);
+}
+.cover h1{
+  font-size:54px;font-weight:700;margin-top:160px;
+  letter-spacing:2px;
+}
+.cover .subtitle{
+  font-size:22px;color:var(--gold);margin-top:24px;
+}
+.cover .footer{
+  position:absolute;bottom:30px;left:0;right:0;
+  display:flex;justify-content:space-between;padding:0 60px;
+  color:#90A4AE;font-size:16px;z-index:2;
+}
+
+/* ── Section divider ─────────────────────────────────────────────── */
+.section-divider{
+  background:var(--section);color:#fff;text-align:center;
+}
+.section-divider .part-label{
+  font-size:18px;color:var(--gold);font-weight:700;
+  margin-top:200px;letter-spacing:3px;
+}
+.section-divider h2{
+  font-size:46px;font-weight:700;margin-top:20px;
+}
+.section-divider .en{
+  font-size:18px;color:#90A4AE;margin-top:16px;
+}
+.section-divider .divider-line{
+  width:80px;height:3px;background:var(--gold);
+  margin:40px auto 0;
+}
+
+/* ── Card grid ───────────────────────────────────────────────────── */
+.card{
+  border-radius:10px;padding:18px 22px;
+  background:#fff;
+}
+.card.light-blue{background:var(--light-blue);}
+.card.light-green{background:var(--light-green);}
+.card.light-orange{background:var(--light-orange);}
+.card.light-red{background:var(--light-red);}
+.card.light-purple{background:var(--light-purple);}
+.card.dark{background:var(--navy);color:#fff;}
+
+.card h3{
+  font-size:18px;font-weight:700;margin-bottom:10px;
+}
+.card.blue h3{color:var(--blue);}
+.card.teal h3{color:var(--teal);}
+.card.green h3{color:var(--green);}
+.card.gold h3{color:var(--orange);}
+.card.red h3{color:var(--red);}
+.card.purple h3{color:var(--purple);}
+.card.dark h3{color:var(--gold);}
+
+.card p{font-size:14px;line-height:1.7;color:#333;}
+.card.dark p{color:#fff;}
+
+.card-list{font-size:14px;line-height:1.9;color:#333;}
+.card.dark .card-list{color:#fff;}
+
+/* ── Two column ──────────────────────────────────────────────────── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+
+/* ── Image centered ──────────────────────────────────────────────── */
+.figure{
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+  flex:1;min-height:0;min-width:0;
+}
+.figure img{
+  position:absolute;
+  top:0;bottom:0;left:0;right:0;margin:auto;
+  max-width:100%;max-height:100%;
+  object-fit:contain;
+}
+
+/* ── Formula block ───────────────────────────────────────────────── */
+.formula-box{
+  background:var(--light-blue);
+  border-left:4px solid var(--blue);
+  padding:18px 24px;border-radius:6px;
+  text-align:center;font-size:20px;
+  margin:10px 0;
+}
+.formula-box.gold{background:var(--light-orange);border-color:var(--gold);}
+.formula-box.red{background:var(--light-red);border-color:var(--red);}
+.formula-box.purple{background:var(--light-purple);border-color:var(--purple);}
+
+/* ── Highlight callout ───────────────────────────────────────────── */
+.callout{
+  text-align:center;font-size:15px;font-weight:700;
+  padding:10px;border-radius:6px;margin-top:8px;
+}
+.callout.red{background:var(--light-red);color:var(--red);}
+.callout.teal{background:var(--light-green);color:var(--teal);}
+.callout.gold{background:var(--light-orange);color:var(--orange);}
+
+/* ── Timeline ────────────────────────────────────────────────────── */
+.spectrum{
+  height:42px;border-radius:21px;
+  background:linear-gradient(90deg,var(--light-blue) 0%,var(--light-purple) 50%,var(--light-red) 100%);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;font-size:13px;font-weight:700;color:var(--navy);
+}
+
+/* ── Navigation ──────────────────────────────────────────────────── */
+.nav{
+  position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:14px;z-index:100;
+  background:rgba(13,27,62,.85);backdrop-filter:blur(8px);
+  padding:8px 18px;border-radius:30px;color:#fff;font-size:13px;
+}
+.nav button{
+  background:rgba(255,255,255,.15);color:#fff;border:none;
+  width:30px;height:30px;border-radius:50%;cursor:pointer;
+  font-size:14px;transition:background .2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.nav button:hover{background:rgba(255,255,255,.3);}
+.nav .counter{min-width:60px;text-align:center;font-variant-numeric:tabular-nums;}
+
+.progress{
+  position:fixed;top:0;left:0;height:3px;background:var(--gold);
+  z-index:100;transition:width .25s ease;
+}
+
+/* ── Notes panel ─────────────────────────────────────────────────── */
+.notes-toggle{
+  position:fixed;top:16px;right:16px;z-index:100;
+  background:rgba(13,27,62,.85);color:#fff;border:none;
+  padding:8px 14px;border-radius:20px;cursor:pointer;font-size:12px;
+}
+.notes-panel{
+  position:fixed;top:0;right:0;bottom:0;width:340px;
+  background:#0A1128;color:#fff;padding:30px 24px;
+  overflow-y:auto;transform:translateX(100%);
+  transition:transform .3s ease;z-index:99;
+  font-size:13px;line-height:1.7;
+}
+.notes-panel.open{transform:translateX(0);}
+.notes-panel h4{
+  color:var(--gold);font-size:14px;margin-bottom:10px;
+  text-transform:uppercase;letter-spacing:1px;
+}
+.notes-panel .note-text{color:#cfd8dc;}
+
+/* ── Misc ────────────────────────────────────────────────────────── */
+.katex{font-size:1.05em !important;}
+.formula-box .katex{font-size:1.3em !important;}
+
+.tag{
+  display:inline-block;padding:2px 10px;border-radius:12px;
+  font-size:12px;font-weight:600;margin-right:6px;
+}
+.tag.blue{background:var(--blue);color:#fff;}
+.tag.teal{background:var(--teal);color:#fff;}
+.tag.red{background:var(--red);color:#fff;}
+
+/* ── Code block ─────────────────────────────────────────────────── */
+.codeblock{
+  background:#0A1128;border-radius:8px;padding:14px 18px;
+  font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;line-height:1.6;
+  color:#E0E0E0;overflow:hidden;white-space:pre;
+  border-left:3px solid var(--gold);
+}
+.codeblock .ln{color:#546E7A;display:inline-block;width:26px;text-align:right;margin-right:12px;user-select:none;}
+.codeblock .kw{color:#82B1FF;}
+.codeblock .st{color:#FFB74D;}
+.codeblock .cm{color:#78909C;font-style:italic;}
+.codeblock .nm{color:#B388FF;}
+.codeblock .fn{color:#80DEEA;}
+.split-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;min-height:0;}
+
+/* ── Print: render all slides, one per page ─────────────────────── */
+@media print{
+  @page{ size:1280px 720px; margin:0; }
+  html,body{ width:1280px; height:auto; overflow:visible; background:#fff; }
+  .deck{ width:1280px; height:auto; }
+  .progress,.nav,.notes-toggle,.notes-panel{ display:none !important; }
+  .slide{
+    position:relative !important;
+    inset:auto !important;
+    top:auto !important; left:auto !important;
+    transform:none !important;
+    opacity:1 !important;
+    pointer-events:auto !important;
+    box-shadow:none !important;
+    margin:0 !important;
+    page-break-after:always;
+    break-after:page;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<div class="deck" id="deck">
+
+<!-- ═══ Slide 1: Cover ═══ -->
+<section class="slide cover active" data-notes="开场白。今天向罗老师介绍AlphaGo Zero的原理。重点在MCTS的过程，然后介绍强化学习中的时序差分等，以及AlphaGo Zero如何通过自我对弈实现自我增强。整个介绍会从原理出发，并适当联系物理中的蒙特卡洛方法。">
+  <div class="cover-stripe"></div>
+  <h1>AlphaGo Zero 原理介绍</h1>
+  <div class="subtitle">从蒙特卡洛树搜索到自我博弈强化学习</div>
+  <div class="footer">
+    <span>汇报人：郭绍阳</span>
+    <span>2026 年 7 月 1 日</span>
+  </div>
+</section>
+
+<!-- ═══ Slide 2: Outline ═══ -->
+<section class="slide light" data-notes="目录分三部分。Part I 介绍MCTS，这是核心。Part II 介绍AlphaGo Zero的具体算法，实现从零开始的超人智能。Part III 介绍强化学习基础，作为补充和拓展。">
+  <div class="accent-bar navy"></div>
+  <div class="slide-header">
+    <div class="slide-title">目录</div>
+  </div>
+  <div class="slide-body" style="justify-content:center;">
+    <div style="display:flex;flex-direction:column;gap:24px;padding:0 40px;">
+
+      <div style="display:flex;align-items:center;gap:24px;">
+        <div style="width:64px;height:64px;background:var(--blue);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:700;">I</div>
+        <div>
+          <div style="font-size:22px;font-weight:700;color:var(--navy);">蒙特卡洛树搜索 (MCTS)</div>
+          <div style="font-size:14px;color:var(--gray);margin-top:4px;">博弈树搜索 · UCT公式 · 四阶段流程 · 性质分析</div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:24px;">
+        <div style="width:64px;height:64px;background:var(--red);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:700;">II</div>
+        <div>
+          <div style="font-size:22px;font-weight:700;color:var(--navy);">AlphaGo Zero：自我博弈的突破</div>
+          <div style="font-size:14px;color:var(--gray);margin-top:4px;">神经网络架构 · PUCT搜索 · 自我增强 · 训练循环</div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:24px;">
+        <div style="width:64px;height:64px;background:var(--teal);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:700;">III</div>
+        <div>
+          <div style="font-size:22px;font-weight:700;color:var(--navy);">强化学习基础</div>
+          <div style="font-size:14px;color:var(--gray);margin-top:4px;">MDP · 价值函数 · 蒙特卡洛方法 · 时序差分学习</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 3: Section I ═══ -->
+<section class="slide section section-divider" data-notes="进入第一部分，MCTS。推荐教程：李理的博客'AlphaZero'一文，用井字棋例子图解了MCTS从传统rollout到AlphaZero去掉rollout的完整演进，还有状态和走法表示的实现细节，讲得非常透彻，适合深入阅读。链接在标题下方。">
+  <div class="part-label">PART I</div>
+  <h2>蒙特卡洛树搜索</h2>
+  <div class="en">Monte Carlo Tree Search</div>
+  <div class="divider-line"></div>
+  <div style="margin-top:40px;display:flex;justify-content:center;gap:60px;text-align:left;font-size:14px;color:#90A4AE;line-height:1.8;">
+    <div>
+      <div style="color:var(--gold);font-weight:700;margin-bottom:8px;letter-spacing:1px;">📖 推荐教程（李理的博客）</div>
+      <div><a href="https://fancyerii.github.io/books/alphago/" target="_blank" style="color:#B0BEC5;text-decoration:none;border-bottom:1px dashed #546E7A;">1. 解析 AlphaGo</a></div>
+      <div><a href="https://fancyerii.github.io/books/alphagozero/" target="_blank" style="color:#B0BEC5;text-decoration:none;border-bottom:1px dashed #546E7A;">2. 解析 AlphaGo Zero</a></div>
+      <div><a href="https://fancyerii.github.io/books/alphazero/" target="_blank" style="color:#B0BEC5;text-decoration:none;border-bottom:1px dashed #546E7A;">3. 解析 AlphaZero <span style="font-size:12px;color:#78909C;border:none;">(含 MCTS 图解)</span></a></div>
+    </div>
+    <div style="width:1px;background:#37474F;"></div>
+    <div>
+      <div style="color:var(--gold);font-weight:700;margin-bottom:8px;letter-spacing:1px;">📄 核心论文 (附本地 PDF)</div>
+      <div>
+        <a href="https://www.nature.com/articles/nature16961" target="_blank" style="color:#B0BEC5;text-decoration:none;border-bottom:1px dashed #546E7A;">• AlphaGo (Nature 2016)</a>
+        <a href="papers/AlphaGoLee_Nature2016.pdf" target="_blank" style="color:#546E7A;margin-left:6px;text-decoration:none;" title="打开本地 PDF">⬇️本地</a>
+      </div>
+      <div>
+        <a href="https://www.nature.com/articles/nature24270" target="_blank" style="color:#B0BEC5;text-decoration:none;border-bottom:1px dashed #546E7A;">• AlphaGo Zero (Nature 2017)</a>
+        <a href="papers/AlphaGoZero_Nature2017.pdf" target="_blank" style="color:#546E7A;margin-left:6px;text-decoration:none;" title="打开本地 PDF">⬇️本地</a>
+      </div>
+      <div>
+        <a href="https://www.science.org/doi/10.1126/science.aar6404" target="_blank" style="color:#B0BEC5;text-decoration:none;border-bottom:1px dashed #546E7A;">• AlphaZero (Science 2018)</a>
+        <a href="papers/AlphaZero_Science2018_arxiv1712.01815.pdf" target="_blank" style="color:#546E7A;margin-left:6px;text-decoration:none;" title="打开本地 PDF">⬇️本地</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 3b: Minimax search ═══ -->
+<section class="slide light" data-notes="先从最经典的博弈搜索minimax讲起，这是冯诺依曼提出的，下棋的人都在不自觉使用。核心思想：我方(MAX)每步选对自己最有利的，假设对手(MIN)每步选对我方最不利的——即最坏情况下最大化收益。图里是一棵深度2的博弈树：叶节点是估值函数的值(比如象棋子力差)。底层MIN节点取子节点的最小值(对手选最不利于我的)，根MAX取这些最小值里的最大值(我选最有利的)。结果=3，选最左分支。关键前提：需要一个叶节点估值函数。象棋里子力价值明确(车9马4兵1)，所以minimax+估值函数在象棋上非常成功，Deep Blue就是这么做死李世石...不对是卡斯帕罗夫。参考李理博客AlphaGo一文。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">Minimax 搜索 <span style="font-size:14px;color:var(--gray);font-weight:400;">最坏情况下最大化收益 (冯·诺依曼)</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/minimax.png" alt="minimax"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 3c: Alpha-Beta pruning ═══ -->
+<section class="slide light" data-notes="minimax的问题是要搜索整棵树，指数爆炸。alpha-beta剪枝在不改变结果的前提下剪掉不可能影响决策的分支。原理：维护两个值alpha(MAX已找到的最好下界)和beta(MIN能容忍的上界)，当alpha>=beta时该分支不可能被选，剪掉。图中例子：第一个MIN节点算出=3，根MAX的alpha=3。第二个MIN节点第一个叶=2，2<alpha=3，说明这个MIN节点最多给2，比已有的3差，剪掉其余子节点。第三个MIN节点整体剪掉(已有3够了)。关键：剪枝效果依赖走法排序——先搜好的走法能剪得更多。这就是为什么需要heuristic做move ordering。alpha-beta让象棋搜索深度从4层提到6-7层。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">Alpha-Beta 剪枝 <span style="font-size:14px;color:var(--gray);font-weight:400;">剪掉不影响决策的分支</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/alpha_beta.png" alt="alpha beta"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 3d: Heuristic move ordering ═══ -->
+<section class="slide light" data-notes="这一页讲启发式搜索，对应你说的'先搜子力优势大的局面'。alpha-beta剪枝的效果严重依赖走法排序——先搜好的走法能剪掉更多分支。怎么做排序？用heuristic估值。象棋里子力价值明确：车=9马=4炮=4相=2兵=1，叶节点估值就是双方子力差。基于此做move ordering：吃车(+9)优先搜、吃马(+4)次之、将军优先、普通走法延迟、被动防守(-2)最后。这样alpha-beta能在同样算力下搜得更深。围棋的问题是：没有好的子力估值——一子的价值随全局形势剧烈变化，'厚薄''势''实地'难以量化。所以围棋无法用传统minimax+heuristic。这正好引出下一页和MCTS。参考李理博客。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">Heuristic 启发式搜索 <span style="font-size:14px;color:var(--gray);font-weight:400;">优先搜子力优势大的走法</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/heuristic.png" alt="heuristic"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 3e: Why Go fails for minimax ═══ -->
+<section class="slide light" data-notes="这页总结为什么围棋不能用minimax。两个根本问题。第一分支因子太大：象棋约35，深度6-7层可行(35^6约18亿)；围棋约250，深度4层就39亿，算力根本不够。第二估值函数难写：象棋子力价值明确简单求和就行；围棋一子价值随全局变化，厚薄势实地难以量化，而且深层局面并不比浅层更容易评估——这点很关键，minimax依赖'深层叶节点更容易估值'的假设，围棋不满足。所以围棋需要完全不同的方法：MCTS。MCTS用随机模拟到终局来'回避'估值函数难题——不用写估值函数，直接用模拟结果。这就是接下来要讲的重点。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">为什么围棋不能用 Minimax？ <span style="font-size:14px;color:var(--gray);font-weight:400;">分支因子 + 估值函数</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/why_go_fails.png" alt="why go fails"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 4: Game Complexity ═══ -->
+<section class="slide light" data-notes="先说清楚为什么围棋这么难。围棋的状态空间复杂度是10的170次方，这比宇宙中原子的总数（约10的80次方）还要大得多。国际象棋是10的47次方，已经被Deep Blue用暴力搜索解决。但围棋无法暴力搜索，必须用更聪明的方法。这正是MCTS发挥作用的地方。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">为什么围棋这么难？</div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/complexity.png" alt="complexity"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 5: MC from Physics to Games ═══ -->
+<section class="slide light" data-notes="这里建立与物理的联系。蒙特卡洛方法本身就起源于物理——曼哈顿计划。在格点QCD中，我们用MC采样计算路径积分，用Metropolis算法按exp(-S)的权重采样构型，本质是重要性采样。在博弈中也是类似的思路：用随机模拟对局至终局来评估局面好坏，用树结构组织搜索方向。两者的本质相同：用随机采样解决精确计算不可行的问题。这一点对罗老师来说应该很有共鸣。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">蒙特卡洛方法：从物理到博弈</div>
+  </div>
+  <div class="slide-body">
+    <div class="two-col" style="flex:1;">
+      <div class="card light-green">
+        <h3 class="green">物理中的蒙特卡洛</h3>
+        <div class="card-list">
+          • 格点QCD：用MC采样计算路径积分<br><br>
+          • Metropolis算法：按 $\exp(-S)$ 采样构型<br><br>
+          • 重要性采样：用概率分布引导采样<br><br>
+          • 核心思想：用随机采样近似复杂积分
+        </div>
+      </div>
+      <div class="card light-blue">
+        <h3 class="blue">博弈中的蒙特卡洛</h3>
+        <div class="card-list">
+          • 随机模拟对局至终局获得结果<br><br>
+          • 统计胜率来评估局面好坏<br><br>
+          • 用树结构组织搜索方向<br><br>
+          • 核心思想：用随机采样近似博弈值
+        </div>
+      </div>
+    </div>
+    <div class="callout red">本质相同：用随机采样解决精确计算不可行的问题</div>
+  </div>
+</section>
+
+<!-- ═══ Slide 5b: Traditional MCTS iter 1 (tic-tac-toe) ═══ -->
+<section class="slide light" data-notes="这一页用井字棋例子图解传统MCTS，参考李理博客的讲法，比抽象圆圈直观得多。初始局面s0，X占了中心，轮到O走。第1次模拟：s0是叶子，直接展开5个合法走法s01-s05。对每个子节点做rollout——随机走子到终局。比如s01的rollout路径如图中橙色虚线所示，最终X赢了，v=+1。5个子节点的rollout结果分别是+1,-1,+1,0,-1。回传：根节点s0累计N=5，W=0（2胜2负1平）。注意每个节点存N(访问次数)和W(累计价值)，W/N就是平均胜率即Q值。关键：rollout是随机的，质量差且慢——这是AlphaGo Zero要改进的核心。每个棋盘就是一个真实局面状态，这样看MCTS就是在一棵'局面树'上做选择性搜索。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">传统 MCTS 第 1 次模拟 <span style="font-size:14px;color:var(--gray);font-weight:400;">展开 + Rollout + 回传 (井字棋实例)</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/ttt_iter1.png" alt="mcts iter1"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 5c: Traditional MCTS iter 2 (UCT selection) ═══ -->
+<section class="slide light" data-notes="第2次模拟开始用UCT选择。根s0的5个子节点都有了第1次的N和W，现在算每个的UCT值=W/N+c*sqrt(ln Np/N)。s01和s03的UCT=0.71最高(W=+1,N=1)，选s01下行。s01是叶子，展开它的4个合法走法s011-s014，各自rollout得v=+1,+1,+1,0。回传：s01更新为N=5,W=4；根s0更新为N=9,W=4。注意UCT公式里的Np是父节点访问次数(这里是s0的N=5)。这个选择过程就是利用-探索平衡：W/N大说明历史好(利用)，访问少的探索项大(探索)。可以对比第1次和第2次：第1次所有子都没访问过只能全展开，第2次开始用UCT选最有前途的分支深入。反复迭代，搜索树非对称增长，好分支越来越深。这正是MCTS的核心——把算力集中在有价值的分支。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">传统 MCTS 第 2 次模拟 <span style="font-size:14px;color:var(--gray);font-weight:400;">UCT 选择 → 展开 → 回传</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/ttt_iter2.png" alt="mcts iter2"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 5d: Tree growth (asymmetric) ═══ -->
+<section class="slide light" data-notes="这页讲MCTS搜索树的非对称增长特性，这是MCTS区别于传统alpha-beta剪枝的关键优势。alpha-beta是均匀展开的，每个分支深度一样。MCTS不同：它根据UCT值动态分配搜索预算，有前途的分支(胜率高)会被反复访问、长得更深，没前途的分支(胜率低)访问少、很浅。图里展示1次、10次、100次模拟后树的生长：初始只有根和一个子；10次后小树成型，好分支(蓝)更深；100次后明显非对称，算力集中在有价值的左侧分支，右侧少探索。这本质是重要性采样——把计算资源投向信息量大的区域。这也是为什么MCTS是anytime算法：随时停都能给出当前最优，算力越多越准。类比物理：像MC里的重要性采样，按概率密度集中采样高权重区域，而非均匀采样。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">搜索树的非对称增长 <span style="font-size:14px;color:var(--gray);font-weight:400;">算力集中 = 重要性采样</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/tree_growth.png" alt="tree growth"></div>
+  </div>
+</section>
+
+
+<!-- ═══ Slide 6: MCTS Four Phases ═══ -->
+<section class="slide light" data-notes="这是MCTS的核心。每次迭代有四个阶段：1. 选择Selection——从根节点开始，沿UCT值最大的子节点一路向下，直到到达一个没有完全展开的节点。2. 扩展Expansion——在该节点下添加一个新的子节点（一个未尝试过的合法动作）。3. 模拟Simulation——从新节点开始，用快速策略（通常随机）走子直到游戏结束，得到胜负结果。4. 回传Backpropagation——把结果沿路径回传，更新路径上每个节点的访问次数和胜利次数。这四个步骤反复执行，搜索树逐渐增长，统计信息越来越准确。注意传统MCTS的模拟阶段是随机的，这正是AlphaGo Zero改进的关键点之一。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">MCTS 的四个阶段</div>
+  </div>
+  <div class="slide-body">
+    <div class="figure" style="flex:1.4;"><img src="assets/mcts_phases.png" alt="mcts phases"></div>
+    <div style="text-align:center;font-size:13px;color:var(--gray);margin:6px 0;">每次迭代执行这四个步骤，逐步积累统计信息，搜索精度随迭代次数增加而提高</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+      <div class="card light-blue" style="padding:10px 12px;">
+        <h3 class="blue" style="font-size:14px;">① 选择 Selection</h3>
+        <p style="font-size:12px;">从根节点沿UCT最大的子节点下行</p>
+      </div>
+      <div class="card light-green" style="padding:10px 12px;">
+        <h3 class="green" style="font-size:14px;">② 扩展 Expansion</h3>
+        <p style="font-size:12px;">到达叶节点后添加一个新子节点</p>
+      </div>
+      <div class="card light-orange" style="padding:10px 12px;">
+        <h3 class="gold" style="font-size:14px;">③ 模拟 Simulation</h3>
+        <p style="font-size:12px;">从新节点随机走子直到游戏结束</p>
+      </div>
+      <div class="card light-red" style="padding:10px 12px;">
+        <h3 class="red" style="font-size:14px;">④ 回传 Backpropagation</h3>
+        <p style="font-size:12px;">将结果沿路径回传更新统计量</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 6a: Selection (detail) ═══ -->
+<section class="slide light" data-notes="掰开讲选择阶段。从根节点s出发，对每个合法子节点算UCT值，选最大的下行，递归直到到达叶节点（未展开的节点）。图里根节点R有三个子A/B/C，UCT分别是0.71/0.85/0.68，选B下行；B的子B1/B2算UCT选0.92的B1，B1是叶节点，选择结束。重点讲代码MCTS.py第109-119行：遍历所有合法动作，对每个算u=Q+cpuct*P*sqrt(Ns)/(1+Nsa)，未访问的Q=0只算探索项，取argmax。注意sqrt里是Ns即父节点访问数，不是ln N。这个选择过程就是利用-探索平衡：Q大说明历史回报好（利用），访问少的节点探索项大（探索）。类比物理：像Metropolis里按概率选构型，这里按UCB值选分支。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">① Selection 选择 <span style="font-size:14px;color:var(--gray);font-weight:400;">沿 UCT 最大路径下行至叶节点</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="split-2">
+      <div class="figure" style="flex:none;"><img src="assets/mcts_1_selection.png" alt="selection"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card light-blue" style="padding:12px 16px;">
+          <h3 class="blue" style="font-size:14px;">原理</h3>
+          <p style="font-size:12px;">从根节点出发，对每个子节点计算 PUCT 值，选最大者下行，递归至叶节点。<br><br>$u = Q(s,a) + c_{puct} \cdot P(s,a)\dfrac{\sqrt{N(s)}}{1+N(s,a)}$<br><br>其中 $Q(s,a)$ 是该边的<b>平均胜率</b>（回传价值 $v$ 的增量平均，$v\in[-1,1]$，故 $Q$ 也落在 $[-1,1]$）。<br>利用-探索平衡：$Q$ 大→历史好；$N$ 小→多探索</p>
+        </div>
+        <div class="codeblock"><span class="ln">109</span><span class="kw">for</span> a <span class="kw">in</span> <span class="fn">range</span>(action_size):
+<span class="ln">110</span>    <span class="kw">if</span> valids[a]:
+<span class="ln">111</span>        <span class="kw">if</span> (s,a) <span class="kw">in</span> Qsa:
+<span class="ln">112</span>            u = Qsa[(s,a)] + cpuct * P[s][a] * <span class="fn">sqrt</span>(Ns[s]) / (1 + Nsa[(s,a)])
+<span class="ln">115</span>            u = cpuct * P[s][a] * <span class="fn">sqrt</span>(Ns[s] + EPS)  <span class="cm"># Q=0</span>
+<span class="ln">117</span>    <span class="kw">if</span> u &gt; cur_best: best_act = a</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 6b: Expansion (detail) ═══ -->
+<section class="slide light" data-notes="掰开讲扩展阶段。选中叶节点B1后，如果它还没结束（非终局），就在它下面添加一个新的子节点B1a——对应一个之前没尝试过的合法动作。代码在MCTS.py第83-101行：第一次访问该状态s时s不在Ps里，于是调用神经网络预测得到P和v，把P做合法动作掩码并归一化，标记Vs合法动作，Ns[s]=0，然后return -v。注意这里扩展和评估是合在一起的——叶子节点一旦被访问就立即用网络评估，这也是AlphaGo Zero的特点：扩展的同时获得该节点的价值估计。传统MCTS是先扩展再单独rollout模拟，这里合二为一。强调第88-90行的掩码和重归一化：网络可能给非法动作非零概率，必须屏蔽。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">② Expansion 扩展 <span style="font-size:14px;color:var(--gray);font-weight:400;">在叶节点下添加新子节点</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="split-2">
+      <div class="figure" style="flex:none;"><img src="assets/mcts_2_expansion.png" alt="expansion"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card light-green" style="padding:12px 16px;">
+          <h3 class="green" style="font-size:14px;">原理</h3>
+          <p style="font-size:12px;">到达叶节点后，若非终局，添加一个未尝试的合法动作作为新子节点。<br><br>AlphaGo Zero 的特点：<b>扩展即评估</b>——首次访问叶节点时立即调用神经网络得到 $(P, v)$，扩展与模拟合二为一。<br><br>对 $P$ 做合法动作掩码后重归一化（网络可能给非法动作非零概率）。</p>
+        </div>
+        <div class="codeblock"><span class="ln">83</span><span class="kw">if</span> s <span class="kw">not in</span> Ps:        <span class="cm"># 叶节点</span>
+<span class="ln">85</span>    Ps[s], v = nnet.<span class="fn">predict</span>(board)
+<span class="ln">86</span>    valids = game.<span class="fn">getValidMoves</span>(board, 1)
+<span class="ln">87</span>    Ps[s] = Ps[s] * valids    <span class="cm"># 掩码非法动作</span>
+<span class="ln">90</span>    Ps[s] /= <span class="fn">sum</span>(Ps[s])     <span class="cm"># 重归一化</span>
+<span class="ln">101</span>    Ns[s] = 0
+<span class="ln">102</span>    <span class="kw">return</span> -v             <span class="cm"># 直接回传网络值</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 6c: Simulation (detail) ═══ -->
+<section class="slide light" data-notes="这是AlphaGo Zero和传统MCTS最大的区别，一定要讲清楚。传统MCTS的模拟阶段：从新节点开始用快速策略（通常是随机）走子，一路下到终局，得到胜负z=±1，这个过程叫rollout。问题是随机rollout质量差、计算量大。AlphaGo Zero的做法：根本不做rollout！在扩展阶段叶节点已经被网络评估过了，直接用网络输出的v作为该节点的价值估计，return -v。一次前向传播替代了整条随机rollout路径。这就是为什么论文叫'without rollouts'。图里左边橙色虚线是传统rollout，右边金色框是AlphaGo Zero直接用网络。代价是网络要训得好才准，但好处是搜索效率提升几个数量级——25次模拟就能下出好棋，传统方法要上千次。可以引申：这本质是用学到的价值函数替代蒙特卡洛采样，类似物理里用变分波函数替代纯MC采样。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">③ Simulation 模拟 <span style="font-size:14px;color:var(--gray);font-weight:400;">评估新节点价值（关键差异）</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="split-2">
+      <div class="figure" style="flex:none;"><img src="assets/mcts_3_simulation.png" alt="simulation"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card light-orange" style="padding:12px 16px;">
+          <h3 class="gold" style="font-size:14px;">传统 MCTS vs AlphaGo Zero</h3>
+          <p style="font-size:12px;"><b>传统：</b>从新节点随机 rollout 到终局，得 $z=\pm1$。质量差、计算量大（需上千次模拟）。<br><br><b>AlphaGo Zero：</b>不做 rollout。叶节点处直接用网络 $v = f_\theta(s)$，一次前向传播得到价值估计。<br><br>→ 论文标题 "without rollouts" 的由来。25 次模拟即可下出好棋。</p>
+        </div>
+        <div class="codeblock"><span class="cm"># 传统 MCTS (AlphaGo Zero 不做这一步):</span>
+<span class="cm"># while not game_over:</span>
+<span class="cm">#     action = random_policy(s)</span>
+<span class="cm">#     s = next_state(s, action)</span>
+<span class="cm"># return game_result  # z = ±1</span>
+
+<span class="cm"># AlphaGo Zero: 直接用网络 (MCTS.py:85,102)</span>
+Ps[s], v = nnet.<span class="fn">predict</span>(board)  <span class="cm"># 一次前向传播</span>
+<span class="kw">return</span> -v                        <span class="cm"># 替代整个 rollout</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 6d: Backpropagation (detail) ═══ -->
+<section class="slide light" data-notes="掰开讲回传阶段。从新节点B1a开始，沿着刚才选择的路径B1a→B1→B→R一路向上，更新每条边的访问次数Nsa和动作价值Qsa。代码MCTS.py第127-136行：如果边已存在，Q=(N*Q+v)/(N+1)增量平均，N+=1；如果是新边Q=v,N=1。关键细节是第135行return -v：每上一层就取负，因为零和博弈中我的好局面就是对手的坏局面，这正是minimax的体现——我要最大化自己的价值，等价于最小化对手的价值。图里标注了每个节点更新前后的N和Q。这个增量平均公式Q=(N*Q+v)/(N+1)等价于对v求平均，但不需要存历史v，O(1)空间。整个search函数是递归的：选择→递归→回传，一路下去再一路回来，非常优雅。可以提：这其实就是TD(0)的思想——用后继状态的估计回传更新当前状态，只是这里步长是1/N而非alpha。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">④ Backpropagation 回传 <span style="font-size:14px;color:var(--gray);font-weight:400;">沿路径更新 N 与 Q</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="split-2">
+      <div class="figure" style="flex:none;"><img src="assets/mcts_4_backprop.png" alt="backprop"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card light-red" style="padding:12px 16px;">
+          <h3 class="red" style="font-size:14px;">原理</h3>
+          <p style="font-size:12px;">沿选择路径回传，更新每条边的 $N(s,a)$ 与 $Q(s,a)$：<br><br>$$Q \leftarrow \frac{N \cdot Q + v}{N+1}, \quad N \leftarrow N+1$$<br><b>关键 1：</b>$W/N = Q$ —— 累计价值除以访问次数即平均价值，二者等价。<br><b>关键 2：</b>$\text{return } -v$ —— 每上一层取负。$W$ 相对于当前走棋玩家：我的好局面 = 对手的坏局面，这是 minimax 的体现。<br><br>增量平均等价于对 $v$ 求均值，$O(1)$ 空间。本质是 TD 思想。</p>
+        </div>
+        <div class="codeblock"><span class="ln">127</span><span class="kw">if</span> (s,a) <span class="kw">in</span> Qsa:
+<span class="ln">128</span>    Qsa[(s,a)] = (Nsa[(s,a)]*Qsa[(s,a)] + v) / (Nsa[(s,a)]+1)
+<span class="ln">129</span>    Nsa[(s,a)] += 1
+<span class="ln">131</span><span class="kw">else</span>:
+<span class="ln">132</span>    Qsa[(s,a)] = v;  Nsa[(s,a)] = 1
+<span class="ln">135</span>    Ns[s] += 1
+<span class="ln">136</span><span class="kw">return</span> -v   <span class="cm"># 对手视角取负 (minimax)</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 6e0: Evolution of MCTS (rollout→policy→value→AlphaZero) ═══ -->
+<section class="slide light" data-notes="这一页用井字棋图解MCTS的演进，参考李理博客的讲法，把整个发展脉络一次看清。(a)传统MCTS：每个子节点随机rollout到终局，慢且质量差。(b)AlphaGo：加入策略网络P(s,a)，用网络先验引导搜索方向——好的走法P大被优先探索，但仍保留rollout。(c)AlphaGo Zero：用价值网络v(s)替代rollout，叶节点处一次前向传播直接得到价值估计，不再随机走子。这就是'without rollouts'。(d)AlphaZero：策略和价值合并成单网络f(s)→(p,v)，共享底层特征。这个演进的核心逻辑：用学到的知识（网络）逐步替代昂贵的随机采样（rollout），每次替代都大幅降低计算成本、提升质量。可以类比物理：从纯MC采样→用试探波函数引导→优化波函数参数，本质都是用先验知识提升采样效率。UCT公式也随之演进：传统UCT用sqrt(ln Np/Ni)做均匀探索；加Policy后变成c*P*sqrt(ln Np/(1+Ni))，P引导探索方向；AlphaGo Zero进一步把ln Np改成sqrt(Ns)，更平稳。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">MCTS 的演进 <span style="font-size:14px;color:var(--gray);font-weight:400;">Rollout → 策略网络 → 价值网络 → 单网络</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure" style="flex:1.3;"><img src="assets/ttt_evolution.png" alt="evolution"></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+      <div class="card light-orange" style="padding:10px 12px;">
+        <h3 class="gold" style="font-size:13px;">(a) 传统 MCTS</h3>
+        <p style="font-size:11px;">随机 rollout 到终局<br>质量差、上千次模拟<br>$U \propto \sqrt{\ln N_p / n_i}$</p>
+      </div>
+      <div class="card light-blue" style="padding:10px 12px;">
+        <h3 class="blue" style="font-size:13px;">(b) + 策略网络</h3>
+        <p style="font-size:11px;">$P(s,a)$ 引导搜索方向<br>好走法优先探索<br>仍保留 rollout</p>
+      </div>
+      <div class="card light-green" style="padding:10px 12px;">
+        <h3 class="green" style="font-size:13px;">(c) + 价值网络</h3>
+        <p style="font-size:11px;">$v(s)$ 替代 rollout<br>一次前向传播得价值<br>"without rollouts"</p>
+      </div>
+      <div class="card light-red" style="padding:10px 12px;">
+        <h3 class="red" style="font-size:13px;">(d) AlphaZero</h3>
+        <p style="font-size:11px;">单网络 $f(s)\to(p,v)$<br>策略+价值共享特征<br>通吃棋类</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 6e: Design Q1 - Why descend to leaf? ═══ -->
+<section class="slide light" data-notes="这一页回答一个关键设计问题：MCTS为什么要一路下行到叶子？只决策一层不行吗？对比两个方案。方案A只看一层：根节点s0有三个子，直接用网络评估每个子的价值v，取最大的。问题是这就是贪心，没有lookahead，看不到两步以后的陷阱，短视。方案B是MCTS：从根出发沿PUCT下行到叶子（深度d），在叶子用网络评估v，再回传。关键洞察：最终决策只在根节点s0这一层——getActionProb跑完25次模拟后，只看根节点的访问次数分布N(s0,a)来选动作。深层节点的选择不是为了落子，而是为了把搜索预算（25次模拟）分配到有前途的分支，本质是计算资源调度。为什么要走到叶子？因为只有走到能评估的局面（叶子），才能做lookahead评估完整变化的后果，这是minimax的精髓。类比：物理中要做长程关联的MC，不能只看最近邻。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">设计思考 ①：为什么要下行到叶子？<span style="font-size:14px;color:var(--gray);font-weight:400;">只决策一层吗？</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/why_leaf.png" alt="why leaf"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 6f: Design Q2 - Simulation complexity ═══ -->
+<section class="slide light" data-notes="这一页回答第二个核心问题：AlphaGo Zero说'有policy所以只运行一次'是什么意思？MCTS不是要N倍算力吗？关键对比每步落子的计算复杂度。传统MCTS：每次模拟要rollout一局到终局，rollout长度L=剩余步数（围棋可能上百步），N次模拟总成本正比于N×L步。AlphaGo Zero：每次模拟下行d层（每层只是查表算PUCT，很便宜），到叶子调1次网络得到(P,v)直接回传，不做rollout。N次模拟总成本正比于N×1次网络调用。所以'只运行一次'指的是每个叶子只调一次网络，省去了L步rollout。教学版N=25，传统要25×60≈1500步，AlphaGo Zero只要25次前向传播。论文N=1600但每次只1次网络，这就是为什么4个TPU能扛住。注意：MCTS整体仍是N次模拟（不是1次），N是搜索预算，N越大越准但越慢。AlphaGo Zero的优化是降低'每次模拟的成本'从L降到1。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">设计思考 ②：模拟的复杂度 <span style="font-size:14px;color:var(--gray);font-weight:400;">"只运行一次网络"是什么意思？</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/complexity_compare.png" alt="complexity"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 6g: Design Q3 - MCTS as policy operator ═══ -->
+<section class="slide light" data-notes="这一页把MCTS在整个系统中的角色讲透。MCTS不是一个孤立的搜索算法，它本质是一个策略改进算子。流程：网络输出粗糙的策略p(a|s)——有噪声、未收敛；MCTS用这个p做PUCT搜索，结合N(s,a)统计，25次模拟后得到改进的策略pi（pi正比于N^(1/temp)）；这个pi比原来的p更强，因为它融合了lookahead；然后训练网络去逼近pi；网络变强后又给MCTS更好的p。这就是策略迭代Policy Iteration：pi_policy→MCTS→pi_improved→更新policy。关键insight：MCTS用搜索把粗糙的网络p改进成更强的pi，再让网络学pi——搜索和学习互相增强。这回答了'为什么不直接用网络下棋'：因为单靠网络p不够强，MCTS的lookahead能显著提升质量；但又不能只用MCTS不用网络（传统MCTS太慢）。两者结合才是最优。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">设计思考 ③：MCTS 在系统中的角色 <span style="font-size:14px;color:var(--gray);font-weight:400;">策略改进算子</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/policy_operator.png" alt="policy operator"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 7: UCT Formula ═══ -->
+<section class="slide light" data-notes="选择阶段用UCT公式。UCT = Upper Confidence Bound applied to Trees。第一项wi/ni是该子节点的平均胜率，代表利用——偏好好的走法。第二项是探索项，sqrt(ln N / ni)，访问少的节点获得更高的探索奖励，鼓励尝试未探索的方向。c是探索常数，控制平衡，通常取根号2。这个公式本质是多臂老虎机UCB1在树搜索上的应用。重要性质：Kocsis和Szepesvari在2006年证明，UCT在无限采样下收敛到极小极大最优解。这里需要特别注意：这不仅仅是像随机采样那样的“均值无偏差”（纯随机采样也能做到无偏，但复杂度是指数级），更重要的是“样本效率最优”（对数级累积悔值控制）。可以类比物理：类似模拟退火中温度控制探索-利用平衡，或Metropolis中接受概率的作用。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">Selection: UCT 公式</div>
+    <div class="slide-subtitle">Upper Confidence Bound applied to Trees</div>
+  </div>
+  <div class="slide-body">
+    <div class="formula-box">$$UCT(i) = \frac{w_i}{n_i} + c\sqrt{\frac{\ln N}{n_i}}$$</div>
+    <div class="three-col" style="margin-top:14px;">
+      <div class="card light-blue">
+        <h3 class="blue">利用项 (Exploitation)</h3>
+        <p>$w_i/n_i$ = 第 i 个子节点的平均胜率，偏好好的走法</p>
+      </div>
+      <div class="card light-orange">
+        <h3 class="gold">探索项 (Exploration)</h3>
+        <p>$\sqrt{\ln N / n_i}$：访问少的节点获得更高的探索奖励</p>
+      </div>
+      <div class="card light-purple">
+        <h3 class="purple">探索常数 c</h3>
+        <p>控制利用与探索的平衡，常用 $c = \sqrt{2}$</p>
+      </div>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--light-gray);margin:14px 0 10px;">
+    <div class="callout red" style="text-align:left;font-size:14px;">核心性质：UCT 在无限采样下收敛到极小极大最优解 (Kocsis &amp; Szepesvári, 2006)</div>
+    <div class="callout gold" style="text-align:left;font-size:14px;"><b>关键辨析：均值无偏差 vs 效率最优</b> —— 纯随机采样虽有“渐近无偏性”，但因其样本复杂度是指数级的 $O(b^d)$ 导致完全无法实用。UCT 的真正贡献是<b>样本效率最优</b>（最小化累积悔值）：保证次优分支探索仅以对数级 $O(\log N)$ 增长，从而实现非对称高效采样。</div>
+    <div class="callout teal" style="text-align:left;font-size:14px;">类比物理：类似模拟退火中温度控制探索-利用平衡，或 Metropolis 中接受概率的作用</div>
+  </div>
+</section>
+
+<!-- ═══ Slide 8: MCTS Properties ═══ -->
+<section class="slide light" data-notes="总结MCTS的四个关键性质。1.渐近最优与效率最优——随着模拟次数趋向无穷，选择概率收敛到最优策略。不同于纯随机采样极其低效的无偏（指数级样本复杂度），UCT保证了对数级的累积悔值增长，实现了样本效率的最优。2.Anytime算法——可以随时中断并返回当前最优动作，计算资源越多决策越好，天然适合实时决策。3.无需领域知识——不需要人工设计评估函数，只需知道游戏规则。4.自适应搜索——自动把更多计算资源分配给有前途的分支，搜索树非对称增长，类似重要性采样。这四个性质使MCTS成为博弈AI的通用方法。">
+  <div class="accent-bar blue"></div>
+  <div class="slide-header">
+    <div class="slide-title">MCTS 的关键性质</div>
+  </div>
+  <div class="slide-body">
+    <div class="two-col" style="flex:1;">
+      <div class="card light-blue">
+        <h3 class="blue">渐近/样本效率最优</h3>
+        <p>不同于随机采样高代价的“渐近无偏”，UCT 的真正力量是<b>样本效率最优</b>（最小化悔值），保证将资源集中在最优路径。</p>
+      </div>
+      <div class="card light-green">
+        <h3 class="green">Anytime 算法</h3>
+        <p>可以随时中断并返回当前最优动作。计算资源越多，决策质量越高。天然适合有时间限制的实时决策。</p>
+      </div>
+      <div class="card light-orange">
+        <h3 class="gold">无需领域知识</h3>
+        <p>不需要人工设计评估函数。仅需知道游戏规则（合法动作和终止条件），即可通过模拟获取价值信息。</p>
+      </div>
+      <div class="card light-purple">
+        <h3 class="purple">自适应搜索</h3>
+        <p>自动将更多计算资源分配给最有前途的分支。搜索树非对称增长，类似重要性采样。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 9: Section II ═══ -->
+<section class="slide section section-divider" data-notes="进入第二部分，AlphaGo Zero。将MCTS与深度学习完美结合。">
+  <div class="part-label">PART II</div>
+  <h2>AlphaGo Zero</h2>
+  <div class="en">自我博弈的突破 · Mastering the Game of Go without Human Knowledge</div>
+  <div class="divider-line"></div>
+</section>
+
+<!-- ═══ Slide 15: Evolution ═══ -->
+<section class="slide light" data-notes="回顾AlphaGo系列的发展。2015年10月AlphaGo Fan战胜樊麾，用了监督学习+RL+MCTS。2016年3月AlphaGo Lee 4:1战胜李世石。2017年1月Master网上60连胜。关键突破在2017年10月的AlphaGo Zero——不用任何人类棋谱，纯自我对弈，3天就超越了所有之前版本。2018年12月AlphaZero进一步泛化到象棋和将棋，用同一套算法。AlphaGo Zero的三大简化：1.不使用任何人类数据 2.仅用棋盘状态作为输入，不用手工特征 3.单一神经网络替代策略网络+价值网络。这是从依赖人类知识到完全自学的飞跃。">
+  <div class="accent-bar red"></div>
+  <div class="slide-header">
+    <div class="slide-title">从 AlphaGo 到 AlphaGo Zero</div>
+  </div>
+  <div class="slide-body">
+    <div class="figure" style="flex:1.3;"><img src="assets/evolution.png" alt="evolution"></div>
+    <div class="card light-red">
+      <h3 class="red">AlphaGo Zero 的三大简化</h3>
+      <p>① 不使用任何人类棋谱 (no human data) &nbsp;&nbsp; ② 仅用棋盘状态作为输入 (no hand-crafted features) &nbsp;&nbsp; ③ 单一神经网络替代策略网络+价值网络</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 16: NN Architecture ═══ -->
+<section class="slide light" data-notes="这是alpha-zero-general教学版的神经网络，对应代码othello/pytorch/OthelloNNet.py。和论文的ResNet不同，教学版做了简化：用4层普通CNN，每层512通道、3x3卷积，每层后接BatchNorm和ReLU。输入是单通道棋盘（view成batch×1×board_x×board_y），不是论文的17个特征平面。关键的双头设计和论文一致：策略头经FC→1024→512→action_size输出log_softmax，预测时exp还原成概率；价值头共享backbone经FC→512→1用tanh输出[-1,1]的标量。Dropout=0.3。一个网络同时学策略和价值，共享底层特征。注意：代码里没有L2正则，只用BN+Dropout防过拟合。可以提一句：论文用20/40个残差块（256通道），教学版简化为4层CNN是为了单GPU也能跑。">
+  <div class="accent-bar red"></div>
+  <div class="slide-header">
+    <div class="slide-title">双头神经网络架构 <span style="font-size:14px;color:var(--gray);font-weight:400;">(OthelloNNet.py)</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/nn_arch.png" alt="nn arch"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 17: PUCT ═══ -->
+<section class="slide light" data-notes="这是AlphaGo Zero对MCTS的关键改进——PUCT公式，对应MCTS.py第112-115行。注意一个重要细节：论文版和代码用的都是sqrt(N(s))，不是传统UCT的sqrt(ln N)。这点容易讲错，要强调。cpuct=1。Q(s,a)是动作价值，由增量平均回传得到（第128行Q=(N*Q+v)/(N+1)），对应利用。P(s,a)是神经网络策略头输出的先验，经合法动作掩码后归一化（第87-90行）。与普通UCT的两大区别：第一，探索项用网络P替代均匀先验，搜索被网络引导；第二，传统MCTS的Simulation是随机rollout到终局，而AlphaGo Zero直接用网络价值v(s)替代rollout——叶节点处调用一次网络得到(P,v)，直接把v回传，不再随机走子。这样每次模拟只需一次前向传播。注意代码第102和136行的return -v：零和博弈中对手视角取负，这是minimax的体现。">
+  <div class="accent-bar red"></div>
+  <div class="slide-header">
+    <div class="slide-title">MCTS + 神经网络：PUCT 搜索 <span style="font-size:14px;color:var(--gray);font-weight:400;">(MCTS.py:112-115) · PUCT = Predictor + UCT</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure" style="flex:1.4;"><img src="assets/puct.png" alt="puct"></div>
+    <div class="card" style="background:var(--bg);">
+      <h3 style="color:var(--navy);font-size:15px;">与传统 MCTS 的关键区别</h3>
+      <p style="font-size:13px;">① 用 $P(s,a)$ 替代随机模拟 (Simulation) &nbsp;&nbsp; ② 用 $v(s)$ 替代终局结果 &nbsp;&nbsp; ③ 搜索效率大幅提升，少量模拟即可获得高质量策略</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 18: Self-Play Loop ═══ -->
+<section class="slide light" data-notes="这是AlphaGo Zero的核心循环，三个组件互相驱动。神经网络f_theta提供p和v，引导MCTS搜索。MCTS基于网络的p、v进行搜索，得到改进的策略pi，用来选择落子。自我对弈用这个策略下完一整盘棋，产生训练数据(s, pi, z)——状态、MCTS搜索的策略、终局结果。然后用这些数据训练神经网络，更新theta。新网络再驱动下一轮MCTS和自我对弈。这是一个自我提升的闭环：网络越强，搜索越准，产生的数据越好，训练出的网络更强。注意这里没有任何人类数据，完全从随机初始化开始自我进化。关键细节：MCTS跑完N次模拟后，根节点的访问次数N(s,a)如何变成落子策略pi？用温度参数tau——pi正比于N^(1/tau)。李理博客讲得清楚：对弈时tau->0选N最大的(确定性、最强)；自对弈前期tau=1按比例随机采样(保证探索、避免模式坍塌)，后期tau->0。这正是main.py里tempThreshold=15的由来：前15步探索、之后利用。训练数据里的pi就是MCTS的访问次数分布(温度采样后)，z是终局胜负。">
+  <div class="accent-bar red"></div>
+  <div class="slide-header">
+    <div class="slide-title">自我对弈与数据生成 <span style="font-size:14px;color:var(--gray);font-weight:400;">MCTS → 落子策略 π → 训练数据 (s, π, z)</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="split-2">
+      <div class="figure" style="flex:none;"><img src="assets/self_play_loop.png" alt="self play loop"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="card light-blue" style="padding:12px 16px;">
+          <h3 class="blue" style="font-size:14px;">从搜索到落子：温度采样</h3>
+          <p style="font-size:12px;">MCTS 跑完 N 次模拟后，根节点访问次数 $N(s,a)$ 如何变成落子策略？<br><br>$$\pi_i = N(s,a_i)^{1/\tau}$$<br><b>对弈</b> $\tau \to 0$：选 $N$ 最大的（确定性、最强）<br><b>自对弈</b> 前期 $\tau=1$：按比例随机采样（探索、防模式坍塌）<br>教学版 <code>tempThreshold=15</code>：前 15 步探索，之后利用</p>
+        </div>
+        <div class="card light-orange" style="padding:12px 16px;">
+          <h3 class="gold" style="font-size:14px;">训练数据 (s, π, z)</h3>
+          <p style="font-size:12px;">每步记录：<br>• $s$：棋盘状态<br>• $\pi$：MCTS 访问次数分布（温度采样后）<br>• $z$：终局胜负 (±1)<br><br>一局自对弈 → 一条轨迹 → 多个 $(s,\pi,z)$<br>网络学：$p \to \pi$（策略蒸馏），$v \to z$（价值评估）</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 18b: Parameter Table ═══ -->
+<section class="slide light" data-notes="这一页是全篇的参数锚点，把alpha-zero-general的真实配置一次性列出来，方便对照讲解。分三列：MCTS参数来自main.py和MCTS.py——numMCTSSims=25即每步25次模拟，cpuct=1，tempThreshold=15即前15步用temp=1探索、之后temp=0利用。重点强调PUCT公式里是sqrt(N)不是sqrt(ln N)，这是论文版和传统UCT的关键区别。神经网络参数来自OthelloNNet.py——4层CNN（非ResNet），512通道，双头设计，BN+Dropout0.3，无L2。训练参数来自NNet.py和Coach.py——numIters=1000外循环，numEps=100每轮对弈，Adam lr=0.001，epochs=10/batch=64，arenaCompare=40局评估、60%胜率才接受新模型。讲解时可以就着这页指代码位置。所有数值都是默认配置，对应Othello 6x6。">
+  <div class="accent-bar red"></div>
+  <div class="slide-header">
+    <div class="slide-title">代码参数对照表 <span style="font-size:14px;color:var(--gray);font-weight:400;">(alpha-zero-general 默认配置)</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/param_table.png" alt="param table"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 18c: Compute Comparison ═══ -->
+<section class="slide light" data-notes="这页讲算力，对罗老师这种HPC专家是重点。左边论文版AlphaGo Zero：围棋19x19，每步1600次MCTS模拟（约0.4秒/步），20个残差块（3天版）/40个残差块（40天版）256通道，3天超越Lee、72小时达约5185分（据Extended Data Fig 5），3天版生成490万局自对弈、700k个batch×2048训练；评估用单机4 TPU（Lee是分布式48 TPU）。注意：AGZ论文未公开自对弈worker数，不要说成'64 TPU worker'——那是误传。右边教学版：Othello 6x6，1块K80 GPU，每轮100局、每步25次模拟，4层CNN 512通道，3天约80迭代收敛、约8000局。计算量差距约6个数量级。作者原话：orders of magnitude smaller。关键insight：算法原理完全一致，差距全在规模。可补充AlphaZero(Science 2018)的量级：5000一代TPU自对弈+16二代TPU训练，9小时象棋/12小时将棋/13天围棋，搜索吞吐仅60k positions/s（Stockfish 60M），即搜索量仅为对手1/1000仍胜。这也说明HPC对这个方向至关重要——更大规模=更强智能。">
+  <div class="accent-bar red"></div>
+  <div class="slide-header">
+    <div class="slide-title">复现算力对比 <span style="font-size:14px;color:var(--gray);font-weight:400;">论文 vs 教学版</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/compute_compare.png" alt="compute compare"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 18d: Paper Parameters (Lee / AGZ / AZ) ═══ -->
+<section class="slide light" data-notes="这是全篇的参数量级锚点，把AlphaGo Lee / AlphaGo Zero / AlphaZero三版的真实参数一次性摆清楚，对'参数量级aware'至关重要。据Nature 2017 (AGZ) 和 Science 2018 (AZ) 正文。逐行讲：输入特征——Lee用48个手工特征平面，AGZ只用17/19个原始棋盘平面（当前+历史8步×2色+己方轮次），AZ进一步去掉对称性增强。网络——Lee是分离的策略网+价值网（各13层CNN），AGZ是单一双头ResNet（20块3天版/40块40天版，256通道），AZ用同一架构通吃三棋种。MCTS——Lee和传统MCTS一样做随机rollout到终局，AGZ/AZ都用网络v(s)替代rollout（'without rollouts'的由来）。模拟数——AGZ 1600/步（约0.4秒），AZ 800/步（评估时），教学版仅25/步——这是算力差距的核心来源之一。硬件——Lee分布式48 TPU，AGZ评估只需单机4 TPU（注意：AGZ论文未公开自对弈worker数，别误传'64 TPU worker'），AZ用5000一代TPU自对弈+16二代TPU训练，9小时下象棋、12小时将棋、13天围棋。吞吐量对比最震撼：AZ仅60k positions/s，Stockfish 60M，AZ搜索量是对手1/1000仍胜——说明MCTS+网络的方向性搜索远胜暴力alpha-beta。讲解时可强调：算法原理三版一脉相承，量级差异即智能差异。补充AlphaGo Zero→AlphaZero的4点算法差异（李理博客总结）：1.平局——围棋只有胜负(z=±1)，象棋有平局(z=0)；2.对称性增强——AGZ用棋盘对称性增广数据，AZ不用；3.模型更新——AGZ新模型须在arena胜率>55%才替换旧模型，AZ直接用新模型自对弈无此评估步骤；4.超参——AGZ用贝叶斯优化选超参，AZ直接复用围棋超参下象棋。这4点说明AZ更'懒'更通用，靠算法鲁棒性而非精调。">
+  <div class="accent-bar red"></div>
+  <div class="slide-header">
+    <div class="slide-title">论文参数量级对照 <span style="font-size:14px;color:var(--gray);font-weight:400;">Lee / AGZ / AZ · 参数量级 aware</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/paper_params.png" alt="paper params"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 19: Loss Function ═══ -->
+<section class="slide light" data-notes="训练目标对应NNet.py第96-100行。代码里只有两项，没有L2正则！这点要强调，论文写了c||theta||^2但教学实现省略了，靠BN+Dropout防过拟合。第一项价值损失(z-v)^2，z是自我对弈终局结果正负1，v是网络预测价值，loss_v=sum((target-output)^2)/N。第二项策略损失-pi^T log p，pi是MCTS搜索策略，p是网络输出（注意网络输出的是log_softmax，所以loss_pi=-sum(pi*logp)/N直接对应交叉熵）。pi本质是MCTS的访问次数分布，z是终局胜负。数据格式(board,pi,z)在Coach.py第69行生成，还用getSymmetries做旋转翻转数据增强。关键的策略提升闭环：MCTS搜索得到改进策略pi，训练网络逼近pi，网络又指导MCTS产生更强搜索，循环上升。这个自举过程类比物理中的自洽场方法SCF——每轮迭代都以前一轮结果为基础，逐步逼近最优解。">
+  <div class="accent-bar red"></div>
+  <div class="slide-header">
+    <div class="slide-title">训练目标：损失函数 <span style="font-size:14px;color:var(--gray);font-weight:400;">(NNet.py:96-100)</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="formula-box">$$\ell = \underbrace{(z - v)^2}_{\text{价值}} \;\underbrace{-\; \boldsymbol{\pi}^\top \log \mathbf{p}}_{\text{策略}} + \underbrace{c\|\theta\|^2}_{\text{L2正则}}$$</div>
+    <div style="text-align:center;font-size:13px;color:var(--gray);margin:4px 0;">注：论文含 $c\|\theta\|^2$ 正则项，教学实现省略（靠 BN + Dropout 防过拟合）</div>
+    <div class="two-col" style="margin-top:8px;">
+      <div class="card light-blue">
+        <h3 class="blue">价值损失 $(z-v)^2$</h3>
+        <p style="font-size:12px;">z: 自我对弈终局结果 (±1)<br>v: 网络预测的价值 (tanh)<br><br>loss_v = sum((target-output)²)/N<br>让网络学会准确评估局面</p>
+      </div>
+      <div class="card light-orange">
+        <h3 class="gold">策略损失 $-\pi^\top \log p$</h3>
+        <p style="font-size:12px;">π: MCTS 访问次数分布<br>p: 网络输出 log_softmax<br><br>loss_pi = -sum(π·logp)/N<br>本质是交叉熵 / 知识蒸馏</p>
+      </div>
+    </div>
+    <div class="card dark" style="margin-top:10px;">
+      <h3 style="color:var(--gold);font-size:15px;">策略提升的闭环 (Coach.py)</h3>
+      <p style="font-size:13px;">MCTS搜索 → 得到改进策略π → 训练网络逼近π → 网络指导MCTS → 更强的搜索 → ...</p>
+      <p style="font-size:12px;color:var(--teal);margin-top:6px;">类比物理中的自洽场方法 (SCF)：每轮迭代都以前一轮结果为基础，逐步逼近最优解</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 20: Training Pipeline ═══ -->
+<section class="slide light" data-notes="完整训练流程对应Coach.py的learn方法。四步循环：1.初始化随机权重theta。2.自我对弈numEps=100局，每局用MCTS+f_theta生成数据(s,pi,z)，还用getSymmetries做旋转翻转数据增强。3.采样训练epochs=10、batch=64、Adam lr=0.001，最小化损失更新theta。4.Arena评估，新网络与旧网络对弈arenaCompare=40局，胜率≥updateThreshold=60%才接受并保存best.pth.tar，否则回退到旧网络。然后回到第2步，numIters=1000次迭代。关键细节：每轮重新创建MCTS对象（第88行）重置搜索树，但保留trainExamplesHistory最近20轮的数据（numItersForTrainExamplesHistory=20）做滑动窗口训练，防止分布漂移导致不稳定。算力对比：AlphaGo Zero论文3天版490万局自对弈、1600模拟/步、20残差块、评估单机4TPU（自对弈worker数论文未公开，勿说'64 TPU'）；教学版1块K80、25模拟/步、4层CNN、3天约8000局，计算量小约6个数量级。这个架构天然适合并行——自我对弈各worker独立，是HPC的天然场景。">
+  <div class="accent-bar red"></div>
+  <div class="slide-header">
+    <div class="slide-title">完整训练流程 <span style="font-size:14px;color:var(--gray);font-weight:400;">(Coach.py: learn)</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure" style="flex:1.5;"><img src="assets/training_pipeline.png" alt="training pipeline"></div>
+    <div style="text-align:center;font-size:13px;color:var(--gray);">教学版：1 块 K80 GPU，~3 天，80 迭代收敛 &nbsp;|&nbsp; AGZ：评估 4 TPU，1600 模拟/步，3 天 490 万局</div>
+    <div class="callout teal" style="margin-top:6px;">并行计算架构：自我对弈各 worker 独立，天然适合大规模并行加速（HPC 场景）</div>
+  </div>
+</section>
+
+<!-- ═══ Slide 21: Results ═══ -->
+<section class="slide light" data-notes="训练效果。横轴是训练时间小时数，纵轴是Elo等级分（据论文Fig 3a重绘）。从随机初始化开始，3小时就达到1000分，超过业余水平。大约24-36小时就超越了AlphaGo Lee（2016年战胜李世石的版本，约3600分）。最终在72小时左右达到约5185分（据Extended Data Fig 5），超越AlphaGo Master。注意这是完全从零开始、不用任何人类数据的结果。曲线的形状很有意思——初期增长很快，后期趋于饱和。这种从零到超人的学习曲线，是深度RL最震撼的成果之一。">
+  <div class="accent-bar red"></div>
+  <div class="slide-header">
+    <div class="slide-title">训练效果</div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/elo_progress.png" alt="elo"></div>
+  </div>
+</section>
+
+<!-- ═══ Slide 22: KataGo Elo vs MCTS visits ═══ -->
+<section class="slide light" data-notes="这张图回答一个常被问到的问题：KataGo/AlphaZero系围棋AI的强度随MCTS搜索量(visits)如何变化？结论是对数线性：Elo ≈ Elo0 + k·log10(visits)，每搜索量×10大约+350~490 Elo（每次翻倍约+105~148）。把人类等级分锚定到同一Elo轴后：1 visit（纯策略网络）≈业余6-8段（已具超人类直觉）；0 visit（KataGo Latest纯策略头）≈弱职业~2738 goratings（Wang et al. ICML 2023附录E.2）；8 visits ≈ +325 Elo稳稳超职业；~1k-10k visits远超人类可让顶尖职业子；100k+ visits给顶尖职业让5-6子仍能赢。需要说明：没有一张被广泛引用的、单一权威的'KataGo Elo vs visits 且含人类棋力'公开图——KataGo官方图(katagotraining.org)刻意不与人类等级分挂钩(lightvector本人在GitHub issue #420明确说明)，所以带人类棋力的版本是社区/论文用桥接估算拼出来的。最严谨的公开来源是Wang et al. 2023附录E的Figure E.1，它直接画了Elo vs visits并用goratings锚定'Latest无搜索≈2738'。该图合成Wang et al. 2023、AlphaGo Zero Nature 2017 Fig6、katagotraining.org、r/baduk与OGS论坛实测、goratings.org等公开数据。蓝色带为斜率不确定区间(355~491 Elo/decade)，蓝点为Wang et al.实测锚点，绿星为AlphaGo Zero(raw net ~3000，full ~5185)，红方块为经典非神经网络MCTS bot(Pachi~3段、GnuGo~8级)作对照，灰/紫虚线为人类等级分标尺。核心take-away：搜索量翻倍约+105~148 Elo，这是AlphaZero系AI算力-强度标度律。">
+  <div class="accent-bar red"></div>
+  <div class="slide-header">
+    <div class="slide-title">KataGo 强度 vs MCTS 搜索量 <span style="font-size:14px;color:var(--gray);font-weight:400;">(对数线性标度律)</span></div>
+  </div>
+  <div class="slide-body">
+    <div class="figure"><img src="assets/katago_elo_vs_visits.png" alt="KataGo Elo vs MCTS visits"></div>
+    <div class="callout teal" style="margin-top:6px;">Elo ≈ Elo₀ + k·log₁₀(visits) &nbsp;|&nbsp; 每搜索量 ×10 ≈ +350–490 Elo &nbsp;|&nbsp; 1 visit ≈ 业余 6–8 段</div>
+  </div>
+</section>
+
+<!-- ═══ Slide 22b: KataGo Core Optimizations ═══ -->
+<section class="slide light" data-notes="这张幻灯片详细总结了 KataGo 相比 AlphaGo Zero / AlphaZero 在算法和工程层面的四大核心优化。一、多任务辅助训练。AlphaZero 只有策略和价值两个头，而 KataGo 引入了预测目数差、子力归属以及对手落子预测。这些辅助任务极快地帮助网络建立起对死活和大局观的直观理解，大大加速了前期的无监督训练速度。二、变化算力自弈。在自我对弈时，90% 的步骤被压缩到极低模拟量，只有 10% 的步数使用全模拟。这样一来，用极低算力就可以生成同等规模的棋局数据，极大节省了生成样本的时间。三、引入 SE 模块。这使得卷积神经网络具有了全局感知能力，弥补了经典 CNN 长距离信息传导效率低下的物理局限性。四、混合效用函数。结合胜率和目数差，避免了大胜时的浪着和大败时的摆烂，行棋更拟人，在让子棋和死活题中表现出极其顽强的韧性。最后是工程和规则上的突破，它使得普通家用 GPU 也能运行并训练，让围棋 AI 真正普及。">
+  <div class="accent-bar red"></div>
+  <div class="slide-header">
+    <div class="slide-title">KataGo 核心算法优化：超越 AlphaZero 的秘诀</div>
+    <div class="slide-subtitle">相比于 AlphaGo Zero，KataGo (Wu 2019) 引入了多项关键改良，将训练效率提升了 50~100 倍</div>
+  </div>
+  <div class="slide-body">
+    <div class="two-col" style="flex:1;">
+      <div class="card light-blue">
+        <h3 class="blue" style="font-size:16px;">1. 多任务辅助训练 (Auxiliary Targets)</h3>
+        <p style="font-size:12.5px; line-height:1.6; margin-top:6px;">
+          • <b>目数预测 (Score Lead)</b>：预测具体的终局输赢目数差。<br>
+          • <b>子力归属预测 (Ownership)</b>：预测棋盘上每个交叉点最终归属。<br>
+          • <b>对手下一步预测</b>：强迫网络学习站在对手角度思考。<br>
+          • <b>效果</b>：建立围棋空间概念，<b>极快缩短完全零基础的摸索期</b>。
+        </p>
+      </div>
+      <div class="card light-green">
+        <h3 class="green" style="font-size:16px;">2. 变化算力自弈 (Playout Cap Randomization)</h3>
+        <p style="font-size:12.5px; line-height:1.6; margin-top:6px;">
+          • <b>非对称模拟分配</b>：约 <b>90%</b> 的常规步仅用极低模拟量（如 100 次以下）自弈；仅在 <b>10%</b> 的关键点使用完整模拟量（如 800 次）生成高质量策略标签。<br>
+          • <b>效果</b>：极大地节省了自弈所需的计算代价，**自弈数据生成效率提升数倍**。
+        </p>
+      </div>
+      <div class="card light-orange">
+        <h3 class="gold" style="font-size:16px;">3. 全局感知 SE 模块 (Global Squeeze-and-Excitation)</h3>
+        <p style="font-size:12.5px; line-height:1.6; margin-top:6px;">
+          • <b>全局通道特征提取</b>：在网络中引入 SE 模块与全局池化，打破了经典残差 CNN 只能在多层堆叠后才能传导全局大局观信息的物理局限。<br>
+          • <b>效果</b>：显著提升网络对“长距离”棋子关联、死活和全局厚势的直觉。
+        </p>
+      </div>
+      <div class="card light-purple">
+        <h3 class="purple" style="font-size:16px;">4. “胜率-目数”混合效用函数</h3>
+        <p style="font-size:12.5px; line-height:1.6; margin-top:6px;">
+          • <b>克服 AlphaZero 的弊端</b>：AlphaZero 只看胜率，优胜时易下“退让手”造成目数亏损，劣势时易乱下；KataGo 追求目数优势最大化。<br>
+          • <b>效果</b>：行棋策略更拟人、更稳健，在<b>让子棋 (Handicap Games)</b> 和逆风局中表现极强。
+        </p>
+      </div>
+    </div>
+    <div class="card dark" style="margin-top:14px; padding:12px 20px;">
+      <h3 style="color:var(--gold); font-size:14px; margin-bottom:4px;">💡 规则兼容与工程大众化革新</h3>
+      <p style="font-size:12px; color:#cfd8dc; line-height:1.5;">
+        直接将贴目 (Komi) 和规则信息（中/日/韩）作为特征输入，支持单模型全规则兼容；引入 OpenCL/Vulkan/TensorRT，使普通家用显卡（而非昂贵的 TPU 集群）也能高效运行和训练超人类强度的围棋 AI。
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 23: Section III ═══ -->
+<section class="slide section section-divider" data-notes="进入第三部分，强化学习基础。作为补充内容。">
+  <div class="part-label">PART III</div>
+  <h2>强化学习基础</h2>
+  <div class="en">Reinforcement Learning Foundations</div>
+  <div class="divider-line"></div>
+</section>
+
+<!-- ═══ Slide 23: MDP ═══ -->
+<section class="slide light" data-notes="强化学习的数学框架是马尔可夫决策过程MDP，由五元组定义：状态空间S、动作空间A、转移概率P、奖励函数R、折扣因子gamma。agent在每个状态s选择动作a，环境根据转移概率P到达下一状态，并给出奖励r。目标是找到最优策略使累积奖励最大。围棋天然是一个MDP：状态是棋盘局面，动作是落子位置，奖励是终局胜负正负1。注意围棋的转移是确定性的（无随机性），奖励只在终局给出。">
+  <div class="accent-bar teal"></div>
+  <div class="slide-header">
+    <div class="slide-title">马尔可夫决策过程 (MDP)</div>
+  </div>
+  <div class="slide-body">
+    <div class="figure" style="flex:1.3;"><img src="assets/mdp.png" alt="mdp"></div>
+    <div class="callout red">围棋天然是一个 MDP：状态 = 棋盘局面，动作 = 落子位置，奖励 = 终局胜负 (±1)</div>
+    <div style="text-align:center;font-size:14px;color:var(--gray);margin-top:8px;">RL 的目标：学习最优策略 $\pi^*$ 使得累积奖励最大</div>
+  </div>
+</section>
+
+<!-- ═══ Slide 24: Value Function ═══ -->
+<section class="slide light" data-notes="三个核心概念。策略pi是状态到动作分布的映射，是agent的行为准则。状态价值函数V(s)是从状态s出发遵循策略pi的期望累积回报，Gt是折扣累积回报。动作价值函数Q(s,a)是在状态s执行动作a后遵循策略的期望回报。在AlphaGo中，Q(s,a)就是MCTS节点统计的平均回报，用来指导选择最优走法。这三个概念贯穿整个RL。">
+  <div class="accent-bar teal"></div>
+  <div class="slide-header">
+    <div class="slide-title">价值函数与策略</div>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div class="card light-blue">
+        <h3 class="blue">策略 $\pi(a|s)$</h3>
+        <p>在状态 $s$ 下选择动作 $a$ 的概率分布<br><br>策略是 agent 的"行为准则"<br><br>目标：找到最优策略 $\pi^*$</p>
+      </div>
+      <div class="card light-green">
+        <h3 class="green">状态价值函数 $V(s)$</h3>
+        <p>从状态 $s$ 出发，遵循策略 $\pi$ 所能获得的期望累积回报<br><br>$$V^\pi(s) = \mathbb{E}_\pi[G_t \mid S_t = s]$$<br>$$G_t = R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + \cdots$$</p>
+      </div>
+    </div>
+    <div class="card light-orange" style="margin-top:14px;">
+      <h3 class="gold">动作价值函数 $Q(s, a)$</h3>
+      <p>在状态 $s$ 执行动作 $a$ 后，遵循策略 $\pi$ 的期望累积回报：&nbsp;&nbsp; $Q^\pi(s,a) = \mathbb{E}_\pi[G_t \mid S_t = s, A_t = a]$<br><br>在 AlphaGo 中: $Q(s,a)$ 就是 MCTS 节点统计的平均回报，用来指导选择最优走法</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 25: MC vs TD ═══ -->
+<section class="slide light" data-notes="这是RL的核心：如何估计价值函数。两种主要方法。蒙特卡洛MC：等到一局结束，用实际回报Gt更新，公式V(St) += alpha[Gt - V(St)]。优点是无偏（用真实回报），缺点是高方差，且必须等终局。时序差分TD(0)：每走一步就更新，用R+gamma*V(St+1)作为目标，即用下一步的估计值来bootstrap当前值。优点是低方差、可以在线学习、不必等终局，缺点是有偏（用估计值）。TD是RL最重要的思想之一，Sutton称之为RL的核心。AlphaGo Zero本质上用的是MC——它用终局结果z来回传。但理解TD对理解整个RL框架很重要。">
+  <div class="accent-bar teal"></div>
+  <div class="slide-header">
+    <div class="slide-title">蒙特卡洛方法 vs 时序差分学习</div>
+  </div>
+  <div class="slide-body">
+    <div class="figure" style="flex:1.4;"><img src="assets/td_vs_mc.png" alt="td vs mc"></div>
+    <div class="two-col">
+      <div class="card light-blue">
+        <h3 class="blue">MC 更新：等到终局</h3>
+        <p>$$V(S_t) \leftarrow V(S_t) + \alpha[G_t - V(S_t)]$$<br>无偏但高方差，必须完成完整轨迹</p>
+      </div>
+      <div class="card light-red">
+        <h3 class="red">TD(0) 更新：每步即学</h3>
+        <p>$$V(S_t) \leftarrow V(S_t) + \alpha[R_{t+1} + \gamma V(S_{t+1}) - V(S_t)]$$<br>有偏但低方差，用估计值 bootstrap</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 26: TD(lambda) ═══ -->
+<section class="slide light" data-notes="TD(lambda)是MC和TD的统一框架。关键概念是n-step回报：1-step就是TD(0)，用R+gamma*V；2-step用R+gamma*R+gamma^2*V；n-step用前n步真实奖励加第n步的估计值；无穷步就是MC，用全部真实奖励。TD(lambda)回报是所有n-step回报的几何加权平均，lambda在0到1之间控制看多远。lambda=0退化为TD(0)，lambda=1退化为MC。这是一个优美的统一框架。AlphaGo Zero的价值学习虽然本质是MC，但理解TD(lambda)有助于把握RL方法的全貌。">
+  <div class="accent-bar teal"></div>
+  <div class="slide-header">
+    <div class="slide-title">TD(λ)：MC 与 TD 的统一框架</div>
+  </div>
+  <div class="slide-body">
+    <div class="spectrum">
+      <span>TD(0) &nbsp;λ=0</span>
+      <span>TD(λ) &nbsp;λ=0.5</span>
+      <span>MC &nbsp;λ=1</span>
+    </div>
+    <div style="font-size:18px;font-weight:700;color:var(--navy);margin:16px 0 8px;">n-step 回报</div>
+    <div style="font-size:15px;line-height:2.2;color:#333;">
+      1-step:&nbsp; $G^{(1)} = R_{t+1} + \gamma V(S_{t+1})$ &nbsp;&nbsp;<span style="color:var(--gray);">← TD(0)</span><br>
+      2-step:&nbsp; $G^{(2)} = R_{t+1} + \gamma R_{t+2} + \gamma^2 V(S_{t+2})$<br>
+      n-step:&nbsp; $G^{(n)} = R_{t+1} + \gamma R_{t+2} + \cdots + \gamma^n V(S_{t+n})$<br>
+      ∞-step:&nbsp; $G^{(\infty)} = R_{t+1} + \gamma R_{t+2} + \cdots$ &nbsp;&nbsp;<span style="color:var(--gray);">← MC</span>
+    </div>
+    <div class="formula-box purple" style="margin-top:14px;">
+      $$G_t^\lambda = (1-\lambda)\sum_{n=1}^{\infty} \lambda^{n-1} G^{(n)}, \quad \lambda \in [0,1] \text{ 控制看多远}$$
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 23: Summary ═══ -->
+<section class="slide light" data-notes="总结三大要点。MCTS：通过蒙特卡洛模拟在博弈树中进行高效的选择性搜索，UCT平衡利用与探索，无需评估函数。RL基础：TD学习每步更新，结合估计与真实回报，从MC到TD的统一框架是TD(lambda)。AlphaGo Zero：神经网络替代模拟，MCTS提供策略改进，自我对弈生成数据，从零开始超越人类。核心洞察：搜索+评估+学习三者结合等于从零开始的超人智能。最关键的类比——这就像变分蒙特卡洛VMC：用参数化的试探波函数（神经网络）引导蒙特卡洛采样（MCTS），然后通过优化变分参数（训练）来逼近基态（最优策略）。这个类比把AlphaGo Zero和物理中的VMC完美对应起来。">
+  <div class="accent-bar navy"></div>
+  <div class="slide-header">
+    <div class="slide-title">总结</div>
+  </div>
+  <div class="slide-body">
+    <div class="three-col">
+      <div class="card light-blue">
+        <h3 class="blue">MCTS</h3>
+        <p>通过蒙特卡洛模拟在博弈树中进行高效的选择性搜索<br><br>UCT 平衡利用与探索<br>无需评估函数</p>
+      </div>
+      <div class="card light-green">
+        <h3 class="green">RL 基础</h3>
+        <p>TD 学习：每步更新<br>结合估计与真实回报<br><br>从 MC 到 TD 的统一框架 TD(λ)</p>
+      </div>
+      <div class="card light-red">
+        <h3 class="red">AlphaGo Zero</h3>
+        <p>神经网络替代模拟<br>MCTS 提供策略改进<br>自我对弈生成数据<br><br>从零开始超越人类</p>
+      </div>
+    </div>
+    <div class="card dark" style="margin-top:14px;flex:1;">
+      <h3 style="color:var(--gold);">核心洞察</h3>
+      <p>搜索 (MCTS) + 评估 (Neural Network) + 学习 (Self-Play RL) = 从零开始的超人智能</p>
+      <p style="color:var(--teal);margin-top:10px;font-size:13px;">类比物理：就像变分蒙特卡洛 (VMC) —— 用参数化的试探波函数 (神经网络) 引导蒙特卡洛采样 (MCTS)，然后通过优化变分参数 (训练) 来逼近基态 (最优策略)</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Slide 24: Thank You ═══ -->
+<section class="slide cover" data-notes="谢谢罗老师，欢迎讨论。">
+  <div class="cover-stripe"></div>
+  <h1>谢谢！</h1>
+  <!-- <div class="subtitle">欢迎讨论与交流</div> -->
+</section>
+
+</div><!-- /deck -->
+
+<!-- Navigation -->
+<button class="notes-toggle" id="notesToggle">备注</button>
+<div class="notes-panel" id="notesPanel">
+  <h4>演讲备注</h4>
+  <div class="note-text" id="noteText"></div>
+</div>
+
+<div class="nav">
+  <button id="prev">‹</button>
+  <span class="counter"><span id="cur">1</span> / <span id="total">43</span></span>
+  <button id="next">›</button>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let cur = 0;
+
+document.getElementById('total').textContent = total;
+
+// Responsive scaling
+function fit(){
+  const sx = window.innerWidth / 1280;
+  const sy = window.innerHeight / 720;
+  const s = Math.min(sx, sy);
+  document.documentElement.style.setProperty('--scale', s);
+}
+window.addEventListener('resize', fit);
+fit();
+
+function show(i){
+  cur = Math.max(0, Math.min(total-1, i));
+  slides.forEach((s,idx)=>s.classList.toggle('active', idx===cur));
+  document.getElementById('cur').textContent = cur+1;
+  document.getElementById('progress').style.width = ((cur+1)/total*100)+'%';
+  // notes
+  const notes = slides[cur].dataset.notes || '';
+  document.getElementById('noteText').textContent = notes;
+}
+
+document.getElementById('prev').onclick = ()=>show(cur-1);
+document.getElementById('next').onclick = ()=>show(cur+1);
+
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown') show(cur+1);
+  else if(e.key==='ArrowLeft'||e.key==='PageUp') show(cur-1);
+  else if(e.key==='Home') show(0);
+  else if(e.key==='End') show(total-1);
+  else if(e.key==='n'||e.key==='N') toggleNotes();
+});
+
+// Notes toggle
+const panel = document.getElementById('notesPanel');
+function toggleNotes(){ panel.classList.toggle('open'); }
+document.getElementById('notesToggle').onclick = toggleNotes;
+
+// Support URL hash for direct slide access (#slide=N, 1-based)
+function applyHash(){
+  const m = location.hash.match(/slide=(\d+)/);
+  if(m){ show(parseInt(m[1])-1); }
+}
+window.addEventListener('hashchange', applyHash);
+applyHash();
+
+show(0);
+applyHash();
+
+</script>
+</body>
+</html>
